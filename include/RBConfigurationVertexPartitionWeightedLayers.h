@@ -23,7 +23,6 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     vector<vector <double> > getDegreeByLayers() const { return _degree_by_layers; }
     vector <size_t>  getLayerVec() const { return _layer_vec; }
 
-    vector<vector<double> > const& degree_by_layers;
 
     virtual ~RBConfigurationVertexPartitionWeightedLayers();
     virtual RBConfigurationVertexPartitionWeightedLayers* create(Graph* graph);
