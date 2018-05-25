@@ -14,7 +14,7 @@
 #include "RBConfigurationVertexPartition.h"
 #include "RBERVertexPartition.h"
 #include "CPMVertexPartition.h"
-#include "RBConfigurationVertexPartionWeightedLayers.h"
+#include "RBConfigurationVertexPartitionWeightedLayers.h"
 #include "Optimiser.h"
 
 #include <sstream>
