@@ -7,12 +7,20 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
 {
   public:
     RBConfigurationVertexPartitionWeightedLayers(Graph* graph,
-          vector<size_t> const& membership, double resolution_parameter);
+      vector<size_t> const& _layer_vec, vector<vector <double> > const& _degree_by_layers,
+      vector<size_t> const& membership, double resolution_parameter);
     RBConfigurationVertexPartitionWeightedLayers(Graph* graph,
-          vector<size_t> const& membership);
+      vector<size_t> const& _layer_vec, vector<vector <double> > const& _degree_by_layers,
+      vector<size_t> const& membership);
     RBConfigurationVertexPartitionWeightedLayers(Graph* graph,
+      vector<size_t> const& _layer_vec, vector<vector <double> > const& _degree_by_layers,
       double resolution_parameter);
-    RBConfigurationVertexPartitionWeightedLayers(Graph* graph);
+    RBConfigurationVertexPartitionWeightedLayers(Graph* graph,
+      vector<size_t> const& _layer_vec, vector<vector <double> > const& _degree_by_layers);
+
+    vector<size_t> const& layer_vec;
+    vector<vector<double> > const& degree_by_layers;
+
     virtual ~RBConfigurationVertexPartitionWeightedLayers();
     virtual RBConfigurationVertexPartitionWeightedLayers* create(Graph* graph);
     virtual RBConfigurationVertexPartitionWeightedLayers* create(Graph* graph, vector<size_t> const& membership);
@@ -22,6 +30,7 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
 
   protected:
   private:
+    vector<vector <double> > const& _condense_degree_by_layers(vector<size_t> const& membership);
 };
 
 #endif // RBConfigurationVertexPartitionWeightedLayers_H

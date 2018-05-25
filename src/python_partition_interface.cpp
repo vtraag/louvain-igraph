@@ -601,6 +601,138 @@ extern "C"
     }
   }
 
+  PyObject* _new_RBConfigurationVertexPartitionWeightedLayers(PyObject *self, PyObject *args, PyObject *keywds)
+  {
+    PyObject* py_obj_graph = NULL;
+    PyObject* py_layer_vec = NULL;
+    PyObject* py_degrees_by_layers = NULL;
+    PyObject* py_initial_membership = NULL;
+    PyObject* py_weights = NULL;
+
+    double resolution_parameter = 1.0;
+
+    static char* kwlist[] = {"graph","layer_vec","degrees_by_layers","initial_membership", "weights", "resolution_parameter", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O|OOd", kwlist,
+                                     &py_obj_graph, &py_layer_vec, &py_degrees_by_layers,
+                                      &py_initial_membership, &py_weights, &resolution_parameter))
+        return NULL;
+
+    try
+    {
+
+      Graph* graph = create_graph_from_py(py_obj_graph, py_weights);
+
+      RBConfigurationVertexPartitionWeightedLayers* partition = NULL;
+
+      vector<size_t> layer_vec;
+      #ifdef DEBUG
+        cerr << "Reading layer membership ." << endl;
+      #endif
+      size_t n = PyList_Size(py_layer_vec);
+      layer_vec.resize(n);
+      for (size_t v = 0; v < n; v++)
+      {
+        PyObject* py_item = PyList_GetItem(py_layer_vec, v);
+        #ifdef IS_PY3K
+        if (PyFloat_Check(py_item))
+        #else
+        if (PyFloat_Check(py_item) || PyLong_Check(py_item))
+        #endif
+        {
+          layer_vec[v] = PyLong_AsLong(py_item);
+        }
+        else
+        {
+          PyErr_SetString(PyExc_TypeError, "Expected integer value for membership vector.");
+          return NULL;
+        }
+      }
+
+      vector< vector<double> > degrees_by_layers;
+      #ifdef DEBUG
+        cerr << "Reading layer total weights." << endl;
+      #endif
+      size_t m;
+      n = PyList_Size(py_degrees_by_layers);
+      degrees_by_layers.resize(n);
+      for (size_t v = 0; v < n; v++)
+      {
+            PyObject* py_item = PyList_GetItem(py_degrees_by_layers, v);
+            m=PyList_Size(py_item);
+            degrees_by_layers[v].resize(m);
+            for(size_t w=0;w<m;w++)
+            {
+            PyObject* py_item_item = PyList_GetItem(py_item, w);
+           #ifdef IS_PY3K
+          if (PyFloat_Check(py_item_item) || PyLong_Check(py_item_item))
+          #else
+          if (PyFloat_Check(py_item_item) || PyInt_Check(py_item_item) || PyLong_Check(py_item_item))
+          #endif
+            {
+              degrees_by_layers[v][w] = PyFloat_AsDouble(py_item_item);
+            }
+            else
+            {
+              PyErr_SetString(PyExc_TypeError, "Expected integer value for membership vector.");
+              return NULL;
+        }
+        }
+      }
+
+
+      // If necessary create an initial partition
+      if (py_initial_membership != NULL && py_initial_membership != Py_None)
+      {
+
+        vector<size_t> initial_membership;
+
+        #ifdef DEBUG
+          cerr << "Reading initial membership." << endl;
+        #endif
+        n = PyList_Size(py_initial_membership);
+        initial_membership.resize(n);
+        for (size_t v = 0; v < n; v++)
+        {
+          PyObject* py_item = PyList_GetItem(py_initial_membership, v);
+          #ifdef IS_PY3K
+          if (PyLong_Check(py_item))
+          #else
+          if (PyInt_Check(py_item) || PyLong_Check(py_item))
+          #endif
+          {
+            initial_membership[v] = PyLong_AsLong(py_item);
+          }
+          else
+          {
+            PyErr_SetString(PyExc_TypeError, "Expected integer value for membership vector.");
+            return NULL;
+          }
+        }
+
+        partition = new RBConfigurationVertexPartitionWeightedLayers(graph, layer_vec, degrees_by_layers, initial_membership, resolution_parameter);
+      }
+      else
+        partition = new RBConfigurationVertexPartitionWeightedLayers(graph,layer_vec,degrees_by_layers, resolution_parameter);
+
+      // Do *NOT* forget to remove the graph upon deletion
+      partition->destructor_delete_graph = true;
+
+      PyObject* py_partition = capsule_MutableVertexPartition(partition);
+      #ifdef DEBUG
+        cerr << "Created capsule partition at address " << py_partition << endl;
+      #endif
+
+      return py_partition;
+    }
+    catch (std::exception const & e )
+    {
+      string s = "Could not construct partition: " + string(e.what());
+      PyErr_SetString(PyExc_BaseException, s.c_str());
+      return NULL;
+    }
+  }
+
   PyObject* _MutableVertexPartition_get_py_igraph(PyObject *self, PyObject *args, PyObject *keywds)
   {
     PyObject* py_partition = NULL;

@@ -147,25 +147,30 @@ class BaseTest:
 #    super(RBERVertexPartitionTest, self).setUp();
 #    self.partition_type = louvain.RBERVertexPartition;
 #
-#class RBConfigurationVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
-#  def setUp(self):
-#    super(RBConfigurationVertexPartitionTest, self).setUp();
-#    self.partition_type = louvain.RBConfigurationVertexPartition;
+class RBConfigurationVertexPartitionTestWeightedLayers(BaseTest.MutableVertexPartitionTest):
+ def setUp(self):
+   super(RBConfigurationVertexPartitionTestWeightedLayers, self).setUp();
+   self.partition_type = louvain.RBConfigurationVertexPartition;
+
+# class RBConfigurationVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
+#     def setUp(self):
+#         super(RBConfigurationVertexPartitionTest, self).setUp();
+#         self.partition_type = louvain.RBConfigurationVertexPartition;
 #
 #class CPMVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
 #  def setUp(self):
 #    super(CPMVertexPartitionTest, self).setUp();
 #    self.partition_type = louvain.CPMVertexPartition;
 
-class SurpriseVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
-  def setUp(self):
-    super(SurpriseVertexPartitionTest, self).setUp();
-    self.partition_type = louvain.SurpriseVertexPartition;
-
-class SignificanceVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
-  def setUp(self):
-    super(SignificanceVertexPartitionTest, self).setUp();
-    self.partition_type = louvain.SignificanceVertexPartition;
+# class SurpriseVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
+#   def setUp(self):
+#     super(SurpriseVertexPartitionTest, self).setUp();
+#     self.partition_type = louvain.SurpriseVertexPartition;
+#
+# class SignificanceVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
+#   def setUp(self):
+#     super(SignificanceVertexPartitionTest, self).setUp();
+#     self.partition_type = louvain.SignificanceVertexPartition;
 
 #%%
 if __name__ == '__main__':
