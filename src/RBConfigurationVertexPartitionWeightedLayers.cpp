@@ -1,45 +1,35 @@
 #include "RBConfigurationVertexPartitionWeightedLayers.h"
 
-RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(Graph* graph,
-      vector<size_t> const& _layer_vec, vector<vector<double> > const& _degree_by_layers,
-      vector<size_t> const& membership, double resolution_parameter) :
-        LinearResolutionParameterVertexPartition(graph,
-        membership, resolution_parameter), _layer_vec(_layer_vec),_degree_by_layers(_degree_by_layers)
-{
-  this->setLayerVec(_layer_vec);
-  this->setDegreeByLayers(_degree_by_layers);
-  this->_total_layer_weights = _compute_total_layer_weights(_degree_by_layers);
-}
+RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(
+    Graph *graph, vector<size_t> const &_layer_vec, vector<vector<double> > const &_degree_by_layers,
+    vector<size_t> const &membership, double resolution_parameter)
+    : LinearResolutionParameterVertexPartition(graph, membership, resolution_parameter),
+      _layer_vec(_layer_vec), _degree_by_layers(_degree_by_layers),
+      _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
+{ }
 
-RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(Graph* graph,
-      vector<size_t> const& _layer_vec, vector<vector<double> > const& _degree_by_layers,
-      vector<size_t> const& membership) :
-        LinearResolutionParameterVertexPartition(graph,
-        membership), _layer_vec(_layer_vec),_degree_by_layers(_degree_by_layers)
-{
-  this->setLayerVec(_layer_vec);
-  this->setDegreeByLayers(_degree_by_layers);
-  this->_total_layer_weights = _compute_total_layer_weights(_degree_by_layers);
-}
+RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(
+    Graph *graph, vector<size_t> const &_layer_vec, vector<vector<double> > const &_degree_by_layers,
+    vector<size_t> const &membership)
+    : LinearResolutionParameterVertexPartition(graph, membership), _layer_vec(_layer_vec),
+      _degree_by_layers(_degree_by_layers),
+      _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
+{ }
 
-RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(Graph* graph,
-      vector<size_t> const& _layer_vec, vector<vector<double> > const& _degree_by_layers,
-      double resolution_parameter) :
-        LinearResolutionParameterVertexPartition(graph, resolution_parameter),_layer_vec(_layer_vec),_degree_by_layers(_degree_by_layers)
-{
-  this->setLayerVec(_layer_vec);
-  this->setDegreeByLayers(_degree_by_layers);
-  this->_total_layer_weights = _compute_total_layer_weights(_degree_by_layers);
-}
+RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(
+    Graph *graph, vector<size_t> const &_layer_vec, vector<vector<double> > const &_degree_by_layers,
+    double resolution_parameter)
+    : LinearResolutionParameterVertexPartition(graph, resolution_parameter), _layer_vec(_layer_vec),
+      _degree_by_layers(_degree_by_layers),
+      _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
+{ }
 
-RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(Graph* graph,
-    vector<size_t> const& _layer_vec, vector<vector<double> > const& _degree_by_layers) :
-        LinearResolutionParameterVertexPartition(graph), _layer_vec(_layer_vec),_degree_by_layers(_degree_by_layers)
-{
-  this->setLayerVec(_layer_vec);
-  this->setDegreeByLayers(_degree_by_layers);
-  this->_total_layer_weights = _compute_total_layer_weights(_degree_by_layers);
-}
+RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(
+    Graph *graph, vector<size_t> const &_layer_vec, vector<vector<double> > const &_degree_by_layers)
+    : LinearResolutionParameterVertexPartition(graph), _layer_vec(_layer_vec),
+      _degree_by_layers(_degree_by_layers),
+      _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
+{ }
 
 RBConfigurationVertexPartitionWeightedLayers::~RBConfigurationVertexPartitionWeightedLayers()
 { }
@@ -47,14 +37,13 @@ RBConfigurationVertexPartitionWeightedLayers::~RBConfigurationVertexPartitionWei
 //CREATE METHODS
 RBConfigurationVertexPartitionWeightedLayers* RBConfigurationVertexPartitionWeightedLayers::create(Graph* graph)
 {
-  return new RBConfigurationVertexPartitionWeightedLayers(graph, this->getLayerVec(), this->getDegreeByLayers(),
-                                                          this->resolution_parameter);
+  return new RBConfigurationVertexPartitionWeightedLayers(graph, this->_layer_vec, this->_degree_by_layers, this->resolution_parameter);
 }
 
 RBConfigurationVertexPartitionWeightedLayers* RBConfigurationVertexPartitionWeightedLayers::create(Graph* graph, vector<size_t> const& membership)
 {
   vector<vector<double> > new_degree_by_layer = this->_condense_degree_by_layer(membership);
-  return new RBConfigurationVertexPartitionWeightedLayers(graph, this->getLayerVec(), new_degree_by_layer, membership, this->resolution_parameter);
+  return new RBConfigurationVertexPartitionWeightedLayers(graph, this->_layer_vec, new_degree_by_layer, membership, this->resolution_parameter);
 }
 
 vector<double> RBConfigurationVertexPartitionWeightedLayers::_compute_total_layer_weights(vector<vector<double> > const& degree_by_layers)
@@ -80,8 +69,8 @@ vector<vector<double> > RBConfigurationVertexPartitionWeightedLayers::_condense_
     cgroup = membership[v];
     ind_to_add[cgroup].push_back(v);
   }
-  size_t N = this->getDegreeByLayers().size();    //number of nodes
-  size_t M = this->getDegreeByLayers()[0].size(); //number of layers
+  size_t N = this->_degree_by_layers.size();    //number of nodes
+  size_t M = this->_degree_by_layers[0].size(); //number of layers
   vector<vector<double> > condensed_degrees(N, vector<double>(M, 0.0));
   // condensed_degrees.resize(ind_to_add.size())
   vector<size_t> cinds;
@@ -92,7 +81,7 @@ vector<vector<double> > RBConfigurationVertexPartitionWeightedLayers::_condense_
     {
       for (size_t j = 0; j < M; j++)
       {
-        condensed_degrees[cgroup][j] += this->getDegreeByLayers()[cinds[i]][j];
+        condensed_degrees[cgroup][j] += this->_degree_by_layers[cinds[i]][j];
       }
     }
   }
