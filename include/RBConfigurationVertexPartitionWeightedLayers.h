@@ -35,7 +35,9 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
   private:
     vector<size_t> _layer_vec;
     vector<vector<double> > _degree_by_layers;
+    vector<double> _total_layer_weights;
     vector<vector<double> > _condense_degree_by_layer(vector<size_t> const& membership);
+    vector<double> _compute_total_layer_weights(vector<vector<double> > const& degree_by_layers);
 };
 
 #endif // RBConfigurationVertexPartitionWeightedLayers_H
