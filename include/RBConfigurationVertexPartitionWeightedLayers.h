@@ -40,7 +40,8 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     virtual void init_admin();
 
   private:
-    void _clear_resize(vector<vector<double >> &input_vec, size_t N, size_t M);
+    void _clear_resize(vector<vector<double > > &input_vec, size_t N, size_t M);
+    vector<double> add_vectors(vector<double> &v1, vector<double> &v2);
     vector<size_t> const _layer_vec;
     vector<vector<double> > const _degree_by_layers;
     vector<double> const _total_layer_weights;

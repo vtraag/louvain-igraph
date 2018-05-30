@@ -89,7 +89,7 @@ vector<vector<double> > RBConfigurationVertexPartitionWeightedLayers::_condense_
 }
 
 
-void RBConfigurationVertexPartitionWeightedLayers::_clear_resize(vector<vector<double >> &input_vec, size_t N, size_t M) {
+void RBConfigurationVertexPartitionWeightedLayers::_clear_resize(vector<vector<double > > &input_vec, size_t N, size_t M) {
 
     input_vec.clear();
     input_vec.resize(N);
@@ -97,6 +97,21 @@ void RBConfigurationVertexPartitionWeightedLayers::_clear_resize(vector<vector<d
         input_vec[i].resize(M);
     }
 
+}
+//helper method for totalling weight vectors
+vector <double> RBConfigurationVertexPartitionWeightedLayers::add_vectors(vector<double> &v1, vector<double> &v2){
+
+    if (v1.size() != v2.size() ) {
+            PyErr_SetString(PyExc_ValueError, "size of vectors to add must be equal.");
+            return NULL;
+        }
+    vector<double> outvec(v1.size(),0);
+    for (size_t i=0;i<outvec.size;i++){
+
+        outvec[i]=v1[i]+v2[i];
+    }
+
+    return outvec;
 }
 
 /*****************************************************************************
@@ -118,24 +133,28 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
       nb_comms = this->_membership[i] + 1;
   }
 
+  size_t nb_layers=0;
+  for (size_t i = 0; i < this->_layer_vec ; i++)
+  {
+    if (this->_layer_vec[i] + 1 > nb_layers)
+      nb_layers = this->_layer_vec[i] + 1;
+  }
+
   // Reset administration
   this->community.clear();
   for (size_t i = 0; i < nb_comms; i++)
     this->community.push_back(new set<size_t>());
 
+  this->_clear_resize(_total_weight_in_comm_by_layer,nb_comms,nb_layers)
+  this->_clear_resize(_total_weight_to_comm_by_layer,nb_comms,nb_layers)
+  this->_clear_resize(_total_weight_from_comm_by_layer,nb_comms,nb_layers)
 
-  this->_total_weight_in_comm_by_layers.clear();
-  this->_total_weight_in_comm_by_layers.resize(nb_comms);
-  this->_total_weight_from_comm_by_layers.clear();
-  this->_total_weight_from_comm_by_layers.resize(nb_comms);
-  this->_total_weight_to_comm_by_layers.clear();
-  this->_total_weight_to_comm_by_layers.resize(nb_comms);
   this->_csize.clear();
   this->_csize.resize(nb_comms);
 
-  this->_current_node_cache_community_from = n + 1; this->_cached_weight_from_community.resize(n, 0);
-  this->_current_node_cache_community_to = n + 1;   this->_cached_weight_to_community.resize(n, 0);
-  this->_current_node_cache_community_all = n + 1;  this->_cached_weight_all_community.resize(n, 0);
+  this->_current_node_cache_community_from = n + 1; this->_clear_resize(_cached_weight_from_community,n,nb_layers);
+  this->_current_node_cache_community_to = n + 1;   this->_clear_resize(_cached_weight_to_community,n,nb_layers);
+  this->_current_node_cache_community_all = n + 1;  this->_clear_resize(_cached_weight_all_community,n,nb_layers);
 
   this->_total_weight_in_all_comms = 0.0;
   for (size_t v = 0; v < n; v++)
@@ -157,15 +176,18 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
     size_t v_comm = this->_membership[v];
     size_t u_comm = this->_membership[u];
 
-    // Get the weight of the edge
-    double w = this->graph->edge_weight(e);
+    // Get the weights of the edge
+//    double w = this->graph->edge_weight(e);
+    vector< double>  w_layers = this->graph->edge_weight_layers(e);
+
+
     // Add weight to the outgoing weight of community of v
-    this->_total_weight_from_comm[v_comm] += w;
+    this->_total_weight_from_comm[v_comm]=this->add_vectors(_total_weight_from_comm[v_comm],w_layers);
     #ifdef DEBUG
       cerr << "\t" << "Add (" << v << ", " << u << ") weight " << w << " to from_comm " << v_comm <<  "." << endl;
     #endif
     // Add weight to the incoming weight of community of u
-    this->_total_weight_to_comm[u_comm] += w;
+    this->_total_weight_to_comm[u_comm] = this->add_vectors(_total_weight_to_comm[u_comm],w_layers);
     #ifdef DEBUG
       cerr << "\t" << "Add (" << v << ", " << u << ") weight " << w << " to to_comm " << u_comm << "." << endl;
     #endif
@@ -174,17 +196,17 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
       #ifdef DEBUG
         cerr << "\t" << "Add (" << u << ", " << v << ") weight " << w << " to from_comm " << u_comm <<  "." << endl;
       #endif
-      this->_total_weight_from_comm[u_comm] += w;
+      this->_total_weight_from_comm[u_comm] = this->add_vectors(_total_weight_from_comm[u_comm],w_layers);
       #ifdef DEBUG
         cerr << "\t" << "Add (" << u << ", " << v << ") weight " << w << " to to_comm " << v_comm << "." << endl;
       #endif
-      this->_total_weight_to_comm[v_comm] += w;
+      this->_total_weight_to_comm[v_comm] = this->add_vectors(_total_weight_to_comm[v_comm],w_layers);
     }
     // If it is an edge within a community
     if (v_comm == u_comm)
     {
-      this->_total_weight_in_comm[v_comm] += w;
-      this->_total_weight_in_all_comms += w;
+      this->_total_weight_in_comm[v_comm] = this->add_vectors(_total_weight_in_comm[v_comm],w_layers);
+      this->_total_weight_in_all_comms = this->add_vectors(_total_weight_in_all_comms,w_layers);
       #ifdef DEBUG
         cerr << "\t" << "Add (" << v << ", " << u << ") weight " << w << " to in_comm " << v_comm << "." << endl;
       #endif
