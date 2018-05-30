@@ -60,7 +60,7 @@ class MutableVertexPartition
     set<size_t> const& get_community(size_t comm);
     size_t nb_communities();
 
-    void move_node(size_t v,size_t new_comm);
+    virtual void move_node(size_t v,size_t new_comm);
     virtual double diff_move(size_t v, size_t new_comm)
     {
       throw Exception("Function not implemented. This should be implented in a derived class, since the base class does not implement a specific method.");
@@ -103,7 +103,7 @@ class MutableVertexPartition
 
   protected:
 
-    void init_admin();
+    virtual void init_admin();
 
     vector<size_t> _membership; // Membership vector, i.e. \sigma_i = c means that node i is in community c
 
