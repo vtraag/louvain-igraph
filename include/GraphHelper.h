@@ -110,6 +110,7 @@ class Graph
     size_t possible_edges(size_t n);
 
     Graph* collapse_graph(MutableVertexPartition* partition);
+    vector<vector<double> > collapse_edge_layer_weights(MutableVertexPartition* partition);
 
     double weight_tofrom_community(size_t v, size_t comm, vector<size_t> const& membership, igraph_neimode_t mode);
     void cache_neigh_communities(size_t v, vector<size_t> const& membership, igraph_neimode_t mode);
@@ -130,6 +131,7 @@ class Graph
 
     inline size_t vcount() { return igraph_vcount(this->_graph); };
     inline size_t ecount() { return igraph_ecount(this->_graph); };
+    inline size_t lcount() { return _layer_count; }
     inline double total_weight() { return this->_total_weight; };
     inline size_t total_size() { return this->_total_size; };
     inline int is_directed() { return igraph_is_directed(this->_graph); };
@@ -186,6 +188,10 @@ class Graph
         throw Exception("Incorrect mode specified.");
     };
 
+    inline void set_layer_count(size_t n) { this->_layer_count = n; };
+    inline vector<double> edge_layer_weights(size_t e) { return this->_edge_layer_weights[e]; };
+    inline double edge_layer_weight(size_t e, size_t l) { return this->_edge_layer_weights[e][l]; };
+
   protected:
 
     int _remove_graph;
@@ -204,6 +210,11 @@ class Graph
     vector<double> _edge_weights; // Used for the weight of the edges.
     vector<size_t> _node_sizes; // Used for the size of the nodes.
     vector<double> _node_self_weights; // Used for the self weight of the nodes.
+
+    // TODO: consider using vector<map<size_t, double>> for layer-sparse graphs
+    vector<vector<double> > _edge_layer_weights;
+    void set_edge_layer_weights(vector<size_t> const &layer_vec);
+    size_t _layer_count;
 
     void cache_neighbours(size_t v, igraph_neimode_t mode);
     vector<size_t> _cached_neighs_from; size_t _current_node_cache_neigh_from;

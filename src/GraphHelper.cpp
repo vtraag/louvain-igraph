@@ -535,6 +535,74 @@ pair<size_t, size_t> Graph::get_endpoints(size_t e)
   return make_pair<size_t, size_t>((size_t)from, (size_t)to);
 }
 
+void Graph::set_edge_layer_weights(vector<size_t> const &layer_vec)
+{
+  size_t n = this->vcount();
+  size_t m = this->ecount();
+  size_t layers = this->lcount();
+
+  this->_edge_layer_weights.clear();
+  this->_edge_layer_weights.resize(n);
+  for (size_t v = 0; v < layers; ++v)
+  {
+    this->_edge_layer_weights[v].clear();
+    this->_edge_layer_weights[v].resize(layers);
+  }
+
+  igraph_integer_t v, u;
+  double w;
+  for (size_t e = 0; e < m; e++)
+  {
+    w = this->edge_weight(e);
+    igraph_edge(this->_graph, e, &v, &u);
+
+    // TODO: check undirected edges are stored in the same way as directed ones
+    this->_edge_layer_weights[v][layer_vec[u]] += w;
+  }
+}
+
+vector<vector<double> > Graph::collapse_edge_layer_weights(MutableVertexPartition *partition)
+{
+  size_t n_collapsed = partition->nb_communities();
+  size_t m_collapsed = 0;
+  size_t m = this->ecount();
+  size_t layers = this->lcount();
+
+  vector<map<size_t, vector<double> > > collapsed_edges(n_collapsed);
+
+  igraph_integer_t v, u;
+  for (size_t e = 0; e < m; e++)
+  {
+    vector<double> layer_weights = this->edge_layer_weights(e);
+    igraph_edge(this->_graph, e, &v, &u);
+    size_t v_comm = partition->membership((size_t)v);
+    size_t u_comm = partition->membership((size_t)u);
+    if (collapsed_edges[v_comm].count(u_comm) > 0)
+      for (size_t l = 0; l < layers; ++l)
+        collapsed_edges[v_comm][u_comm][l] += layer_weights[l];
+    else
+      collapsed_edges[v_comm][u_comm] = this->edge_layer_weights(e);
+  }
+
+  for (vector<map<size_t, vector<double> > >::iterator itr = collapsed_edges.begin();
+       itr != collapsed_edges.end(); itr++)
+    m_collapsed += itr->size();
+
+  vector<vector<double> > collapsed_edge_layer_weights(m_collapsed);
+
+  size_t e_idx = 0;
+  for (size_t v = 0; v < n_collapsed; v++) {
+    for (map<size_t, vector<double> >::iterator itr = collapsed_edges[v].begin();
+         itr != collapsed_edges[v].end(); itr++) {
+      // TODO: verify this matches the edge ordering of Graph::collapse_graph()
+      collapsed_edge_layer_weights[e_idx] = itr->second;
+      e_idx += 1;
+    }
+  }
+
+  return collapsed_edge_layer_weights;
+}
+
 void Graph::cache_neighbours(size_t v, igraph_neimode_t mode)
 {
   #ifdef DEBUG
