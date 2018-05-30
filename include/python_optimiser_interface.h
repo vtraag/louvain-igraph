@@ -12,6 +12,7 @@
 #include "SignificanceVertexPartition.h"
 #include "SurpriseVertexPartition.h"
 #include "RBConfigurationVertexPartition.h"
+#include "RBConfigurationVertexPartitionWeightedLayers.h"
 #include "RBERVertexPartition.h"
 #include "CPMVertexPartition.h"
 #include "Optimiser.h"

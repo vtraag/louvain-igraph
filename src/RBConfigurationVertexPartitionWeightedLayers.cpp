@@ -88,6 +88,157 @@ vector<vector<double> > RBConfigurationVertexPartitionWeightedLayers::_condense_
   return condensed_degrees;
 }
 
+
+void RBConfigurationVertexPartitionWeightedLayers::_clear_resize(vector<vector<double > > &input_vec, size_t N, size_t M) {
+
+    input_vec.clear();
+    input_vec.resize(N);
+    for (size_t i =0; i<N; i++){
+        input_vec[i].resize(M);
+    }
+
+}
+//helper method for totalling weight vectors
+vector <double> RBConfigurationVertexPartitionWeightedLayers::add_vectors(vector<double> &v1, vector<double> &v2){
+
+    if (v1.size() != v2.size() ) {
+            PyErr_SetString(PyExc_ValueError, "size of vectors to add must be equal.");
+            return NULL;
+        }
+    vector<double> outvec(v1.size(),0);
+    for (size_t i=0;i<outvec.size;i++){
+
+        outvec[i]=v1[i]+v2[i];
+    }
+
+    return outvec;
+}
+
+/*****************************************************************************
+  Overriden methods from Mutable Vertex Partition
+*****************************************************************************/
+
+void RBConfigurationVertexPartitionWeightedLayers::init_admin()
+{
+  #ifdef DEBUG
+    cerr << "void RBConfigurationVertexPartitionWeightedLayers::init_admin()" << endl;
+  #endif
+  size_t n = this->graph->vcount();
+
+  // First determine number of communities (assuming they are consecutively numbered
+  size_t nb_comms = 0;
+  for (size_t i = 0; i < n; i++)
+  {
+    if (this->_membership[i] + 1 > nb_comms)
+      nb_comms = this->_membership[i] + 1;
+  }
+
+  size_t nb_layers=0;
+  for (size_t i = 0; i < this->_layer_vec ; i++)
+  {
+    if (this->_layer_vec[i] + 1 > nb_layers)
+      nb_layers = this->_layer_vec[i] + 1;
+  }
+
+  // Reset administration
+  this->community.clear();
+  for (size_t i = 0; i < nb_comms; i++)
+    this->community.push_back(new set<size_t>());
+
+  this->_clear_resize(_total_weight_in_comm_by_layer,nb_comms,nb_layers)
+  this->_clear_resize(_total_weight_to_comm_by_layer,nb_comms,nb_layers)
+  this->_clear_resize(_total_weight_from_comm_by_layer,nb_comms,nb_layers)
+
+  this->_csize.clear();
+  this->_csize.resize(nb_comms);
+
+  this->_current_node_cache_community_from = n + 1; this->_clear_resize(_cached_weight_from_community,n,nb_layers);
+  this->_current_node_cache_community_to = n + 1;   this->_clear_resize(_cached_weight_to_community,n,nb_layers);
+  this->_current_node_cache_community_all = n + 1;  this->_clear_resize(_cached_weight_all_community,n,nb_layers);
+
+  this->_total_weight_in_all_comms = 0.0;
+  for (size_t v = 0; v < n; v++)
+  {
+    size_t v_comm = this->_membership[v];
+    // Add this node to the community sets
+    this->community[v_comm]->insert(v);
+    // Update the community size
+    this->_csize[v_comm] += this->graph->node_size(v);
+  }
+
+  size_t m = graph->ecount();
+  for (size_t e = 0; e < m; e++)
+  {
+    pair<size_t, size_t> endpoints = this->graph->get_endpoints(e);
+    size_t v = endpoints.first;
+    size_t u = endpoints.second;
+
+    size_t v_comm = this->_membership[v];
+    size_t u_comm = this->_membership[u];
+
+    // Get the weights of the edge
+//    double w = this->graph->edge_weight(e);
+    vector< double>  w_layers = this->graph->edge_weight_layers(e);
+
+
+    // Add weight to the outgoing weight of community of v
+    this->_total_weight_from_comm[v_comm]=this->add_vectors(_total_weight_from_comm[v_comm],w_layers);
+    #ifdef DEBUG
+      cerr << "\t" << "Add (" << v << ", " << u << ") weight " << w << " to from_comm " << v_comm <<  "." << endl;
+    #endif
+    // Add weight to the incoming weight of community of u
+    this->_total_weight_to_comm[u_comm] = this->add_vectors(_total_weight_to_comm[u_comm],w_layers);
+    #ifdef DEBUG
+      cerr << "\t" << "Add (" << v << ", " << u << ") weight " << w << " to to_comm " << u_comm << "." << endl;
+    #endif
+    if (!this->graph->is_directed())
+    {
+      #ifdef DEBUG
+        cerr << "\t" << "Add (" << u << ", " << v << ") weight " << w << " to from_comm " << u_comm <<  "." << endl;
+      #endif
+      this->_total_weight_from_comm[u_comm] = this->add_vectors(_total_weight_from_comm[u_comm],w_layers);
+      #ifdef DEBUG
+        cerr << "\t" << "Add (" << u << ", " << v << ") weight " << w << " to to_comm " << v_comm << "." << endl;
+      #endif
+      this->_total_weight_to_comm[v_comm] = this->add_vectors(_total_weight_to_comm[v_comm],w_layers);
+    }
+    // If it is an edge within a community
+    if (v_comm == u_comm)
+    {
+      this->_total_weight_in_comm[v_comm] = this->add_vectors(_total_weight_in_comm[v_comm],w_layers);
+      this->_total_weight_in_all_comms = this->add_vectors(_total_weight_in_all_comms,w_layers);
+      #ifdef DEBUG
+        cerr << "\t" << "Add (" << v << ", " << u << ") weight " << w << " to in_comm " << v_comm << "." << endl;
+      #endif
+    }
+  }
+
+  this->_total_possible_edges_in_all_comms = 0;
+  for (size_t c = 0; c < nb_comms; c++)
+  {
+    size_t n_c = this->csize(c);
+    size_t possible_edges = this->graph->possible_edges(n_c);
+
+    #ifdef DEBUG
+      cerr << "\t" << "c=" << c << ", n_c=" << n_c << ", possible_edges=" << possible_edges << endl;
+    #endif
+
+    this->_total_possible_edges_in_all_comms += possible_edges;
+
+    // It is possible that some community have a zero size (if the order
+    // is for example not consecutive. We add those communities to the empty
+    // communities vector for consistency.
+    if (this->community[c]->size() == 0)
+      this->_empty_communities.push_back(c);
+  }
+
+  #ifdef DEBUG
+    cerr << "exit MutableVertexPartition::init_admin()" << endl << endl;
+  #endif
+
+}
+
+
 /*****************************************************************************
   Returns the difference in modularity if we move a node to a new community
 *****************************************************************************/

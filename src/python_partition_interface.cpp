@@ -613,7 +613,7 @@ extern "C"
 
     static char* kwlist[] = {"graph", "layer_vec", "degrees_by_layers", "initial_membership", "weights", "resolution_parameter", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O|OOOOd", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOO|OOd", kwlist,
                                      &py_obj_graph, &py_layer_vec, &py_degrees_by_layers,
                                      &py_initial_membership, &py_weights, &resolution_parameter))
       return NULL;
@@ -679,6 +679,7 @@ extern "C"
           }
         }
       }
+
 
       // If necessary create an initial partition
       if (py_initial_membership != NULL && py_initial_membership != Py_None)
