@@ -6,7 +6,9 @@ RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeig
     : LinearResolutionParameterVertexPartition(graph, membership, resolution_parameter),
       _layer_vec(_layer_vec), _degree_by_layers(_degree_by_layers),
       _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
-{ }
+{
+    init_admin();
+}
 
 RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(
     Graph *graph, vector<size_t> const &_layer_vec, vector<vector<double> > const &_degree_by_layers,
@@ -14,7 +16,9 @@ RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeig
     : LinearResolutionParameterVertexPartition(graph, membership), _layer_vec(_layer_vec),
       _degree_by_layers(_degree_by_layers),
       _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
-{ }
+{
+   init_admin();
+}
 
 RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(
     Graph *graph, vector<size_t> const &_layer_vec, vector<vector<double> > const &_degree_by_layers,
@@ -22,17 +26,24 @@ RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeig
     : LinearResolutionParameterVertexPartition(graph, resolution_parameter), _layer_vec(_layer_vec),
       _degree_by_layers(_degree_by_layers),
       _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
-{ }
+{
+ init_admin();
+}
+
 
 RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(
     Graph *graph, vector<size_t> const &_layer_vec, vector<vector<double> > const &_degree_by_layers)
     : LinearResolutionParameterVertexPartition(graph), _layer_vec(_layer_vec),
       _degree_by_layers(_degree_by_layers),
       _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
-{ }
+{
+init_admin();
+}
 
 RBConfigurationVertexPartitionWeightedLayers::~RBConfigurationVertexPartitionWeightedLayers()
-{ }
+{
+ init_admin();
+}
 
 //CREATE METHODS
 RBConfigurationVertexPartitionWeightedLayers* RBConfigurationVertexPartitionWeightedLayers::create(Graph* graph)
@@ -46,6 +57,8 @@ RBConfigurationVertexPartitionWeightedLayers* RBConfigurationVertexPartitionWeig
   return new RBConfigurationVertexPartitionWeightedLayers(graph, this->_layer_vec, new_degree_by_layer, membership, this->resolution_parameter);
 }
 
+//computes the 2 times the sum of all the edges within each layer
+//used to compute the multilayer modularity
 vector<double> RBConfigurationVertexPartitionWeightedLayers::_compute_total_layer_weights(vector<vector<double> > const& degree_by_layers)
 {
   vector<double> total_layer_weights;
@@ -112,6 +125,79 @@ vector <double> RBConfigurationVertexPartitionWeightedLayers::add_vectors(vector
     }
 
     return outvec;
+
+vector <double> RBConfigurationVertexPartitionWeightedLayers::multiply_vectors_elementwise(vector<double> &v1, vector<double> &v2){
+
+    if (v1.size() != v2.size() ) {
+            PyErr_SetString(PyExc_ValueError, "size of vectors to add must be equal.");
+            return NULL;
+        }
+    vector<double> outvec(v1.size(),0);
+    for (size_t i=0;i<outvec.size;i++){
+
+        outvec[i]=v1[i]*v2[i];
+    }
+
+    return outvec;
+
+vector <double> RBConfigurationVertexPartitionWeightedLayers::divide_vectors_elementwise(vector<double> &v1, vector<double> &v2){
+
+    if (v1.size() != v2.size() ) {
+            PyErr_SetString(PyExc_ValueError, "size of vectors to add must be equal.");
+            return NULL;
+        }
+    vector<double> outvec(v1.size(),0);
+    for (size_t i=0;i<outvec.size;i++){
+
+        outvec[i]=v1[i]/v2[i];
+    }
+
+    return outvec;
+
+double RBConfigurationVertexPartitionWeightedLayers::dot_product(vector<double> &v1, vector<double> &v2){
+
+    if (v1.size() != v2.size() ) {
+            PyErr_SetString(PyExc_ValueError, "size of vectors to add must be equal.");
+            return NULL;
+        }
+    double outval=0;
+    for (size_t i=0;i<outvec.size;i++){
+
+        outvec+=v1[i]*v2[i];
+    }
+
+    return outvec;
+}
+}
+
+
+//helper method for totalling weight vectors
+vector <double> RBConfigurationVertexPartitionWeightedLayers::subtract_vectors(vector<double> &v1, vector<double> &v2){
+
+    if (v1.size() != v2.size() ) {
+            PyErr_SetString(PyExc_ValueError, "size of vectors to add must be equal.");
+            return NULL;
+        }
+    vector<double> outvec(v1.size(),0);
+    for (size_t i=0;i<outvec.size();i++){
+        outvec[i]=v1[i]-v2[i];
+    }
+    return outvec;
+}
+//for multiply vector by scalar
+vector <double> RBConfigurationVertexPartitionWeightedLayers::scalar_multiply(double scalar, vector<double> &v1){
+    for (size_t i=0;i<v1.size();i++){
+
+        v1[i]=scalar*v1[i];
+    }
+}
+//sum all of the elements within a vector
+double RBConfigurationVertexPartitionWeightedLayers::sum_over_vector(vector<double> &v1){
+    double output=0;
+    for (size_t i=0;i<outvec.size;i++){
+        output+=v1[i];
+    }
+    return output;
 }
 
 /*****************************************************************************
@@ -139,7 +225,7 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
     if (this->_layer_vec[i] + 1 > nb_layers)
       nb_layers = this->_layer_vec[i] + 1;
   }
-
+  this->_nb_layers=nb_layers;
   // Reset administration
   this->community.clear();
   for (size_t i = 0; i < nb_comms; i++)
@@ -178,7 +264,7 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
 
     // Get the weights of the edge
 //    double w = this->graph->edge_weight(e);
-    vector< double>  w_layers = this->graph->edge_weight_layers(e);
+    vector< double>  w_layers = this->graph->edge_layer_weights(e);
 
 
     // Add weight to the outgoing weight of community of v
@@ -238,6 +324,204 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
 
 }
 
+void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new_comm)
+{
+  #ifdef DEBUG
+    cerr << "void MutableVertexPartition::move_node(" << v << ", " << new_comm << ")" << endl;
+    if (new_comm >= this->nb_communities())
+      cerr << "ERROR: New community (" << new_comm << ") larger than total number of communities (" << this->nb_communities() << ")." << endl;
+  #endif
+  // Move node and update internal administration
+  if (new_comm >= this->nb_communities())
+  {
+    if (new_comm < this->graph->vcount())
+    {
+      while (new_comm >= this->nb_communities())
+        this->add_empty_community();
+    }
+    else
+    {
+      throw Exception("Cannot add new communities beyond the number of nodes.");
+    }
+  }
+
+  // Keep track of all possible edges in all communities;
+  size_t node_size = this->graph->node_size(v);
+  size_t old_comm = this->_membership[v];
+  #ifdef DEBUG
+    cerr << "Node size: " << node_size << ", old comm: " << old_comm << ", new comm: " << new_comm << endl;
+  #endif
+  // Incidentally, this is independent of whether we take into account self-loops or not
+  // (i.e. whether we count as n_c^2 or as n_c(n_c - 1). Be careful to do this before the
+  // adaptation of the community sizes, otherwise the calculations are incorrect.
+  if (new_comm != old_comm)
+  {
+    double delta_possible_edges_in_comms = 2.0*node_size*(ptrdiff_t)(this->_csize[new_comm] - this->_csize[old_comm] + node_size)/(2.0 - this->graph->is_directed());
+    _total_possible_edges_in_all_comms += delta_possible_edges_in_comms;
+    #ifdef DEBUG
+      cerr << "Change in possible edges in all comms: " << delta_possible_edges_in_comms << endl;
+    #endif
+  }
+
+  // Remove from old community
+  #ifdef DEBUG
+    cerr << "Removing from old community " << old_comm << ", community size: " << this->_csize[old_comm] << endl;
+  #endif
+  this->community[old_comm]->erase(v);
+  this->_csize[old_comm] -= node_size;
+  #ifdef DEBUG
+    cerr << "Removed from old community." << endl;
+  #endif
+
+  // We have to use the size of the set of nodes rather than the csize
+  // to account for nodes that have a zero size (i.e. community may not be empty, but
+  // may have zero size).
+  if (this->community[old_comm]->size() == 0)
+  {
+    #ifdef DEBUG
+      cerr << "Adding community " << old_comm << " to empty communities." << endl;
+    #endif
+    this->_empty_communities.push_back(old_comm);
+    #ifdef DEBUG
+      cerr << "Added community " << old_comm << " to empty communities." << endl;
+    #endif
+  }
+
+  if (this->community[new_comm]->size() == 0)
+  {
+    #ifdef DEBUG
+      cerr << "Removing from empty communities (number of empty communities is " << this->_empty_communities.size() << ")." << endl;
+    #endif
+    vector<size_t>::reverse_iterator it_comm = this->_empty_communities.rbegin();
+    while (it_comm != this->_empty_communities.rend() && *it_comm != new_comm)
+    {
+      #ifdef DEBUG
+        cerr << "Empty community " << *it_comm << " != new community " << new_comm << endl;
+      #endif
+      it_comm++;
+    }
+    #ifdef DEBUG
+      cerr << "Erasing empty community " << *it_comm << endl;
+      if (it_comm == this->_empty_communities.rend())
+        cerr << "ERROR: empty community does not exist." << endl;
+    #endif
+    if (it_comm != this->_empty_communities.rend())
+      this->_empty_communities.erase( (++it_comm).base() );
+  }
+
+  #ifdef DEBUG
+    cerr << "Adding to new community " << new_comm << ", community size: " << this->_csize[new_comm] << endl;
+  #endif
+  // Add to new community
+  this->community[new_comm]->insert(v);
+  this->_csize[new_comm] += this->graph->node_size(v);
+
+  // Switch outgoing links
+  #ifdef DEBUG
+    cerr << "Added to new community." << endl;
+  #endif
+
+  // Use set for incident edges, because self loop appears twice
+  igraph_neimode_t modes[2] = {IGRAPH_OUT, IGRAPH_IN};
+  for (size_t mode_i = 0; mode_i < 2; mode_i++)
+  {
+    igraph_neimode_t mode = modes[mode_i];
+
+    // Loop over all incident edges
+    vector<size_t> const& neighbours = this->graph->get_neighbours(v, mode);
+    vector<size_t> const& neighbour_edges = this->graph->get_neighbour_edges(v, mode);
+
+    size_t degree = neighbours.size();
+
+    #ifdef DEBUG
+      if (mode == IGRAPH_OUT)
+        cerr << "\t" << "Looping over outgoing links." << endl;
+      else if (mode == IGRAPH_IN)
+        cerr << "\t" << "Looping over incoming links." << endl;
+      else
+        cerr << "\t" << "Looping over unknown mode." << endl;
+    #endif
+
+    for (size_t idx = 0; idx < degree; idx++)
+    {
+      size_t u = neighbours[idx];
+      size_t e = neighbour_edges[idx];
+
+      size_t u_comm = this->_membership[u];
+      // Get the weight of the edge
+//      double w=this->graph->edge_weight(e)
+      vector<double> w_layer = this->graph->edge_layer_weights(e);
+      if (mode == IGRAPH_OUT)
+      {
+        // Remove the weight from the outgoing weights of the old community
+        this->_total_weight_from_comm_by_layer[old_comm] = this->subract_vectors(this->_total_weight_from_comm_by_layer[old_comm],w_layer);
+        // Add the weight to the outgoing weights of the new community
+        this->_total_weight_from_comm_by_layer[new_comm] = this->add_vectors(this->_total_weight_from_comm_by_layer[new_comm],w_layer);
+        #ifdef DEBUG
+          cerr << "\t" << "Moving link (" << v << "-" << u << ") "
+               << "outgoing weight " << w
+               << " from " << old_comm << " to " << new_comm
+               << "." << endl;
+        #endif
+      }
+      else if (mode == IGRAPH_IN)
+      {
+        // Remove the weight from the outgoing weights of the old community
+        this->_total_weight_to_comm[old_comm] = this->subract_vectors(this->_total_weight_to_comm[old_comm],w_layer);
+        // Add the weight to the outgoing weights of the new community
+        this->_total_weight_to_comm[new_comm] = this->add_vectors(this->_total_weight_to_comm[new_comm],w_layer);
+        #ifdef DEBUG
+          cerr << "\t" << "Moving link (" << v << "-" << u << ") "
+               << "incoming weight " << w
+               << " from " << old_comm << " to " << new_comm
+               << "." << endl;
+        #endif
+      }
+      else
+        throw Exception("Incorrect mode for updating the admin.");
+      // Get internal weight (if it is an internal edge)
+      double int_weight = this->scalar_multiply(w_layer,1/((this->graph->is_directed() ? 1.0 : 2.0)/( u == v ? 2.0 : 1.0));
+      // If it is an internal edge in the old community
+      if (old_comm == u_comm)
+      {
+        // Remove the internal weight
+        this->_total_weight_in_comm[old_comm] = this->subract_vectors( this->_total_weight_in_comm[old_comm],int_weight);
+        this->_total_weight_in_all_comms = this->subract_vectors( _total_weight_in_all_comms, int_weight);
+        #ifdef DEBUG
+          cerr << "\t" << "From link (" << v << "-" << u << ") "
+               << "remove internal weight " << int_weight
+               << " from " << old_comm << "." << endl;
+        #endif
+      }
+      // If it is an internal edge in the new community
+      // i.e. if u is in the new community, or if it is a self loop
+      if ((new_comm == u_comm) || (u == v))
+      {
+        // Add the internal weight
+        this->_total_weight_in_comm[new_comm] = this->add_vectors( _total_weight_in_comm[new_comm], int_weight);
+        this->_total_weight_in_all_comms = this->add_vectors(_total_weight_in_all_comms, int_weight);
+        #ifdef DEBUG
+          cerr << "\t" << "From link (" << v << "-" << u << ") "
+               << "add internal weight " << int_weight
+               << " to " << new_comm << "." << endl;
+        #endif
+      }
+    }
+  }
+  #ifdef DEBUG
+    // Check this->_total_weight_in_all_comms
+    vector <double> check_total_weight_in_all_comms(self->nb_layers(),0);
+    for (size_t c = 0; c < this->nb_communities(); c++)
+      check_total_weight_in_all_comms =this->add_vectors( this->total_weight_in_comm(c);
+    cerr << "Internal _total_weight_in_all_comms=" << this->_total_weight_in_all_comms
+         << ", calculated check_total_weight_in_all_comms=" << check_total_weight_in_all_comms << endl;
+  #endif
+  // Update the membership vector
+  this->_membership[v] = new_comm;
+  #ifdef DEBUG
+    cerr << "exit MutableVertexPartition::move_node(" << v << ", " << new_comm << ")" << endl << endl;
+  #endif
+}
 
 /*****************************************************************************
   Returns the difference in modularity if we move a node to a new community
@@ -249,73 +533,54 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
   #endif
   size_t old_comm = this->_membership[v];
   double diff = 0.0;
-  double total_weight = this->graph->total_weight()*(2.0 - this->graph->is_directed());
-  if (total_weight == 0.0)
+  //if graph is directed
+//  vector <double> total_weight = this->scalar_multiply(_total_layer_weights,1/(this->graph->is_directed()));
+  vector <double> total_weight = this->_total_layer_weights;
+
+  if (this->sum_over_vector(total_weight) == 0.0)
     return 0.0;
   if (new_comm != old_comm)
   {
-    #ifdef DEBUG
-      cerr << "\t" << "old_comm: " << old_comm << endl;
-    #endif
-    double w_to_old = this->weight_to_comm(v, old_comm);
-    #ifdef DEBUG
-      cerr << "\t" << "w_to_old: " << w_to_old << endl;
-    #endif
-    double w_from_old = this->weight_from_comm(v, old_comm);
-    #ifdef DEBUG
-      cerr << "\t" << "w_from_old: " << w_from_old << endl;
-    #endif
-    double w_to_new = this->weight_to_comm(v, new_comm);
-    #ifdef DEBUG
-      cerr << "\t" << "w_to_new: " << w_to_new << endl;
-    #endif
-    double w_from_new = this->weight_from_comm(v, new_comm);
-    #ifdef DEBUG
-      cerr << "\t" << "w_from_new: " << w_from_new << endl;
-    #endif
-    double k_out = this->graph->strength(v, IGRAPH_OUT);
-    #ifdef DEBUG
-      cerr << "\t" << "k_out: " << k_out << endl;
-    #endif
-    double k_in = this->graph->strength(v, IGRAPH_IN);
-    #ifdef DEBUG
-      cerr << "\t" << "k_in: " << k_in << endl;
-    #endif
+
+    double w_to_old = this->weight_to_comm_by_layer(v, old_comm);
+    double w_from_old = this->weight_from_comm_by_layer(v, old_comm);
+    double w_to_new = this->weight_to_comm_by_layer(v, new_comm);
+    double w_from_new = this->weight_from_comm_by_layer(v, new_comm);
+
+    double k_out = this->graph->strength_by_layer(v, IGRAPH_OUT);
+    double k_in = this->graph->strength_by_layer(v, IGRAPH_IN);
+
     double self_weight = this->graph->node_self_weight(v);
-    #ifdef DEBUG
-      cerr << "\t" << "self_weight: " << self_weight << endl;
-    #endif
-    double K_out_old = this->total_weight_from_comm(old_comm);
-    #ifdef DEBUG
-      cerr << "\t" << "K_out_old: " << K_out_old << endl;
-    #endif
-    double K_in_old = this->total_weight_to_comm(old_comm);
-    #ifdef DEBUG
-      cerr << "\t" << "K_in_old: " << K_in_old << endl;
-    #endif
-    double K_out_new = this->total_weight_from_comm(new_comm) + k_out;
-    #ifdef DEBUG
-      cerr << "\t" << "K_out_new: " << K_out_new << endl;
-    #endif
-    double K_in_new = this->total_weight_to_comm(new_comm) + k_in;
-    #ifdef DEBUG
-      cerr << "\t" << "K_in_new: " << K_in_new << endl;
-      cerr << "\t" << "total_weight: " << total_weight << endl;
-    #endif
-    double diff_old = (w_to_old - this->resolution_parameter*k_out*K_in_old/total_weight) + \
-               (w_from_old - this->resolution_parameter*k_in*K_out_old/total_weight);
-    #ifdef DEBUG
-      cerr << "\t" << "diff_old: " << diff_old << endl;
-    #endif
-    double diff_new = (w_to_new + self_weight - this->resolution_parameter*k_out*K_in_new/total_weight) + \
-               (w_from_new + self_weight - this->resolution_parameter*k_in*K_out_new/total_weight);
-    #ifdef DEBUG
-      cerr << "\t" << "diff_new: " << diff_new << endl;
-    #endif
+
+    double K_out_old = this->total_weight_from_comm_by_layer(old_comm);
+
+    double K_in_old = this->total_weight_to_comm_by_layer(old_comm);
+
+    double K_out_new = this->add_vectors(this->total_weight_from_comm_by_layer(new_comm),k_out);
+
+    double K_in_new = this->add_vectors(this->total_weight_to_comm_by_layer(new_comm), k_in);
+
+
+    //vectorized versions
+    double diff_old=this->sum_over_vector(w_to_old);
+    diff_old-=this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_out,K_in_old),total_weight));
+    diff_old+=(this->sum_over_vector(w_from_old));
+    diff_old-=( this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_in,K_out_old),total_weight)) )
+
+    double diff_new=this->sum_over_vector(w_to_new);
+    diff_new-=this->resolution_parameter*this->new(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_out,K_in_new),total_weight));
+    diff_new+=(this->sum_over_vector(w_from_new)+self_weight);//self_weight should be scaler
+    diff_new-=( this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_in,K_out_new),total_weight)) )
+
+
+//    double diff_old = (w_to_old - this->resolution_parameter*k_out*K_in_old/total_weight) + \
+//               (w_from_old - this->resolution_parameter*k_in*K_out_old/total_weight);
+
+//    double diff_new = (w_to_new + self_weight - this->resolution_parameter*k_out*K_in_new/total_weight) + \
+//               (w_from_new + self_weight - this->resolution_parameter*k_in*K_out_new/total_weight);
+
     diff = diff_new - diff_old;
-    #ifdef DEBUG
-      cerr << "\t" << "diff: " << diff << endl;
-    #endif
+
   }
   #ifdef DEBUG
     cerr << "exit RBConfigurationVertexPartitionWeightedLayers::diff_move(" << v << ", " << new_comm << ")" << endl;
@@ -337,27 +602,30 @@ double RBConfigurationVertexPartitionWeightedLayers::quality(double resolution_p
   #endif
   double mod = 0.0;
 
-  double m;
-  if (this->graph->is_directed())
-    m = this->graph->total_weight();
-  else
-    m = 2*this->graph->total_weight();
+  vector<double> m = this->_total_layer_weights;
+//  if (this->graph->is_directed())
+//    m = this->graph->total_weight();
+//  else
+//    m = 2*this->graph->total_weight();
 
   if (m == 0)
     return 0.0;
 
   for (size_t c = 0; c < this->nb_communities(); c++)
   {
-    double w = this->total_weight_in_comm(c);
-    double w_out = this->total_weight_from_comm(c);
-    double w_in = this->total_weight_to_comm(c);
+    vector <double> w = this->total_weight_in_comm_by_layer(c);
+    vector <double> w_out = this->total_weight_from_comm_by_layer(c);
+    vector <double> w_in = this->total_weight_to_comm_by_layer(c);
     #ifdef DEBUG
       size_t csize = this->csize(c);
       cerr << "\t" << "Comm: " << c << ", size=" << csize << ", w=" << w << ", w_out=" << w_out << ", w_in=" << w_in << "." << endl;
     #endif
-    mod += w - resolution_parameter*w_out*w_in/((this->graph->is_directed() ? 1.0 : 4.0)*this->graph->total_weight());
+    mod += this->sum_over_vector(this->subract_vectors(w,this->divide_vectors_elementwise(this->multiply_vectors_elementwise(w_out,w_in),m)))
+//    mod += w - resolution_parameter*w_out*w_in/((this->graph->is_directed() ? 1.0 : 4.0)*this->graph->total_weight());
   }
-  double q = (2.0 - this->graph->is_directed())*mod;
+  double q = mod; //factor of 2 should be account for
+//  double q = (2.0 - this->graph->is_directed())*mod;
+
   #ifdef DEBUG
     cerr << "exit double RBConfigurationVertexPartitionWeightedLayers::quality()" << endl;
     cerr << "return " << q << endl << endl;
