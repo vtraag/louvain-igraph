@@ -809,7 +809,7 @@ class RBConfigurationVertexPartitionWeightedLayers(LinearResolutionParameterVert
          `10.1103/PhysRevE.74.016110 <http://doi.org/10.1103/PhysRevE.74.016110>`_
 
    """
-  def __init__(self, graph, layer_vec, degree_by_layers, initial_membership=None, weights=None, resolution_parameter=1.0):
+  def __init__(self, graph, initial_membership=None, weights=None, resolution_parameter=1.0):
     """
     Parameters
     ----------
@@ -848,7 +848,8 @@ class RBConfigurationVertexPartitionWeightedLayers(LinearResolutionParameterVert
         # Make sure it is a list
         weights = list(weights)
 
-    self._partition = _c_louvain._new_RBConfigurationVertexPartitionWeightedLayers(pygraph_t, layer_vec,                                            degree_by_layers,initial_membership, weights, resolution_parameter)
+    self._partition = _c_louvain._new_RBConfigurationVertexPartitionWeightedLayers(pygraph_t, initial_membership,
+                                                                                   weights, resolution_parameter)
     self._update_internal_membership()
 
 class CPMVertexPartition(LinearResolutionParameterVertexPartition):
