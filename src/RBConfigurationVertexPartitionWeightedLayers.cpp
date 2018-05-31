@@ -101,108 +101,64 @@ vector<vector<double> > RBConfigurationVertexPartitionWeightedLayers::_condense_
   return condensed_degrees;
 }
 
-
-void RBConfigurationVertexPartitionWeightedLayers::_clear_resize(vector<vector<double > > &input_vec, size_t N, size_t M) {
-
-    input_vec.clear();
-    input_vec.resize(N);
-    for (size_t i =0; i<N; i++){
-        input_vec[i].resize(M);
-    }
-
-}
-//helper method for totalling weight vectors
-vector <double> RBConfigurationVertexPartitionWeightedLayers::add_vectors(vector<double> &v1, vector<double> &v2){
-
-    if (v1.size() != v2.size() ) {
-            PyErr_SetString(PyExc_ValueError, "size of vectors to add must be equal.");
-            return NULL;
-        }
-    vector<double> outvec(v1.size(),0);
-    for (size_t i=0;i<outvec.size;i++){
-
-        outvec[i]=v1[i]+v2[i];
-    }
-
-    return outvec;
-    }
-
-vector <double> RBConfigurationVertexPartitionWeightedLayers::multiply_vectors_elementwise(vector<double> &v1, vector<double> &v2){
-
-    if (v1.size() != v2.size() ) {
-            PyErr_SetString(PyExc_ValueError, "size of vectors to add must be equal.");
-            return NULL;
-        }
-    vector<double> outvec(v1.size(),0);
-    for (size_t i=0;i<outvec.size;i++){
-
-        outvec[i]=v1[i]*v2[i];
-    }
-
-    return outvec;
-    }
-
-vector <double> RBConfigurationVertexPartitionWeightedLayers::divide_vectors_elementwise(vector<double> &v1, vector<double> &v2){
-
-    if (v1.size() != v2.size() ) {
-            PyErr_SetString(PyExc_ValueError, "size of vectors to add must be equal.");
-            return NULL;
-        }
-    vector<double> outvec(v1.size(),0);
-    for (size_t i=0;i<outvec.size;i++){
-
-        outvec[i]=v1[i]/v2[i];
-    }
-
-    return outvec;
-    }
-
-double RBConfigurationVertexPartitionWeightedLayers::dot_product(vector<double> &v1, vector<double> &v2){
-
-    if (v1.size() != v2.size() ) {
-            PyErr_SetString(PyExc_ValueError, "size of vectors to add must be equal.");
-            return NULL;
-        }
-    double outval=0;
-    for (size_t i=0;i<outvec.size;i++){
-
-        outvec+=v1[i]*v2[i];
-    }
-
-    return outvec;
+void RBConfigurationVertexPartitionWeightedLayers::_clear_resize(vector<vector<double> > &input_vec, size_t N, size_t M) {
+  input_vec.clear();
+  input_vec.resize(N);
+  for (size_t i = 0; i < N; i++)
+    input_vec[i].resize(M);
 }
 
-
-
-//helper method for totalling weight vectors
-vector <double> RBConfigurationVertexPartitionWeightedLayers::subtract_vectors(vector<double> &v1, vector<double> &v2){
-
-    if (v1.size() != v2.size() ) {
-            PyErr_SetString(PyExc_ValueError, "size of vectors to add must be equal.");
-            return NULL;
-        }
-    vector<double> outvec(v1.size(),0);
-    for (size_t i=0;i<outvec.size();i++){
-        outvec[i]=v1[i]-v2[i];
-    }
-    return outvec;
+// helper method for totalling weight vectors
+vector<double> RBConfigurationVertexPartitionWeightedLayers::add_vectors(vector<double> &v1, vector<double> &v2) {
+  vector<double> outvec(v1.size(), 0);
+  for (size_t i = 0; i < outvec.size(); i++)
+    outvec[i] = v1[i] + v2[i];
+  return outvec;
 }
-//for multiply vector by scalar
-vector <double> RBConfigurationVertexPartitionWeightedLayers::scalar_multiply(double scalar, vector<double> &v1){
-    vector <double> outvec(v1.size(),0)
-    for (size_t i=0;i<v1.size();i++){
 
-        outvec[i]=scalar*v1[i];
-    }
-    return outvec;
+vector<double> RBConfigurationVertexPartitionWeightedLayers::multiply_vectors_elementwise(vector<double> &v1, vector<double> &v2) {
+  vector<double> outvec(v1.size(), 0);
+  for (size_t i = 0; i < outvec.size(); i++)
+    outvec[i] = v1[i] * v2[i];
+  return outvec;
 }
-//sum all of the elements within a vector
-double RBConfigurationVertexPartitionWeightedLayers::sum_over_vector(vector<double> &v1){
-    double output=0;
-    for (size_t i=0;i<outvec.size;i++){
-        output+=v1[i];
-    }
-    return output;
+
+vector<double> RBConfigurationVertexPartitionWeightedLayers::divide_vectors_elementwise(vector<double> &v1, vector<double> &v2) {
+  vector<double> outvec(v1.size(), 0);
+  for (size_t i = 0; i < outvec.size(); i++)
+    outvec[i] = v1[i] / v2[i];
+  return outvec;
+}
+
+double RBConfigurationVertexPartitionWeightedLayers::dot_product(vector<double> &v1, vector<double> &v2) {
+  double outval = 0;
+  for (size_t i = 0; i < v1.size(); i++)
+    outval += v1[i] * v2[i];
+  return outval;
+}
+
+// helper method for totalling weight vectors
+vector<double> RBConfigurationVertexPartitionWeightedLayers::subtract_vectors(vector<double> &v1, vector<double> &v2) {
+  vector<double> outvec(v1.size(), 0);
+  for (size_t i = 0; i < outvec.size(); i++)
+    outvec[i] = v1[i] - v2[i];
+  return outvec;
+}
+
+// for multiply vector by scalar
+vector<double> RBConfigurationVertexPartitionWeightedLayers::scalar_multiply(double scalar, vector<double> &v1) {
+  vector<double> outvec(v1.size(), 0);
+  for (size_t i = 0; i < v1.size(); i++)
+    outvec[i] = scalar * v1[i];
+  return outvec;
+}
+
+// sum all of the elements within a vector
+double RBConfigurationVertexPartitionWeightedLayers::sum_over_vector(vector<double> &v1) {
+  double output = 0;
+  for (size_t i = 0; i < v1.size(); i++)
+    output += v1[i];
+  return output;
 }
 
 /*****************************************************************************

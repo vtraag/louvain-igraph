@@ -121,11 +121,11 @@ class MutableVertexPartition
   private:
 
     // Keep track of the internal weight of each community
-    double _total_weight_in_comm;
+    vector<double> _total_weight_in_comm;
     // Keep track of the total weight to a community
-    double _total_weight_to_comm;
+    vector<double> _total_weight_to_comm;
     // Keep track of the total weight from a community
-    double _total_weight_from_comm;
+    vector<double> _total_weight_from_comm;
     // Keep track of the total internal weight
     double _total_weight_in_all_comms;
     size_t _total_possible_edges_in_all_comms;
