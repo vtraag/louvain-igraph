@@ -538,6 +538,7 @@ pair<size_t, size_t> Graph::get_endpoints(size_t e)
   return make_pair<size_t, size_t>((size_t)from, (size_t)to);
 }
 
+// initializes the per-layer contribution to each edge's weight
 void Graph::init_edge_layer_weights(vector<size_t> const &layer_vec)
 {
   size_t layers = *std::max_element(layer_vec.begin(), layer_vec.end());
@@ -547,7 +548,7 @@ void Graph::init_edge_layer_weights(vector<size_t> const &layer_vec)
   size_t m = this->ecount();
 
   this->_edge_layer_weights.clear();
-  this->_edge_layer_weights.resize(n);
+  this->_edge_layer_weights.resize(m);
   for (size_t v = 0; v < layers; ++v)
   {
     this->_edge_layer_weights[v].clear();
@@ -562,8 +563,32 @@ void Graph::init_edge_layer_weights(vector<size_t> const &layer_vec)
     igraph_edge(this->_graph, e, &v, &u);
 
     // TODO: check undirected edges are stored in the same way as directed ones
-    this->_edge_layer_weights[v][layer_vec[u]] += w;
+    this->_edge_layer_weights[e][layer_vec[u]] += w;
   }
+}
+
+// computes the per-layer contribution to each vertex's degree
+// this requires every vertex to belong to exactly one layer
+vector<vector<double> > Graph::compute_degree_by_layers()
+{
+  size_t layers = this->lcount();
+  size_t n = this->vcount();
+  size_t m = this->ecount();
+
+  vector<vector<double> > degree_by_layers(n);
+  for (size_t v = 0; v < n; ++v)
+    degree_by_layers[v].resize(layers);
+
+  igraph_integer_t v, u;
+  double w;
+  for (size_t e = 0; e < m; ++e)
+  {
+    w = this->edge_weight(e);
+    igraph_edge(this->_graph, e, &v, &u);
+    degree_by_layers[v][this->layer_membership(u)] += w;
+  }
+
+  return degree_by_layers;
 }
 
 vector<vector<double> > Graph::collapse_edge_layer_weights(MutableVertexPartition *partition)

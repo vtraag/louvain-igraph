@@ -196,6 +196,9 @@ class Graph
     {
       this->_edge_layer_weights = edge_layer_weights;
     }
+    inline size_t layer_membership(size_t v) { return this->_layer_vec[v]; }
+
+    vector<vector<double> > compute_degree_by_layers();
 
   protected:
 
@@ -220,6 +223,7 @@ class Graph
     vector<vector<double> > _edge_layer_weights;
     void init_edge_layer_weights(vector<size_t> const &layer_vec);
     size_t _layer_count;
+    vector<size_t> _layer_vec;
 
     void cache_neighbours(size_t v, igraph_neimode_t mode);
     vector<size_t> _cached_neighs_from; size_t _current_node_cache_neigh_from;
