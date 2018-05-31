@@ -433,6 +433,9 @@ void Graph::init_admin()
   double w = this->total_weight();
   size_t n_size = this->total_size();
 
+  // default to single-layer graph
+  this->_layer_count = 1;
+
   // For now we default to not correcting self loops.
   // this->_correct_self_loops = false; (remove this as this is set in the constructor)
 
