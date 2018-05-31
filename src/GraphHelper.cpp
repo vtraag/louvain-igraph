@@ -544,7 +544,6 @@ void Graph::init_edge_layer_weights(vector<size_t> const &layer_vec)
   size_t layers = *std::max_element(layer_vec.begin(), layer_vec.end());
   this->set_layer_count(layers);
 
-  size_t n = this->vcount();
   size_t m = this->ecount();
 
   this->_edge_layer_weights.clear();
@@ -567,28 +566,35 @@ void Graph::init_edge_layer_weights(vector<size_t> const &layer_vec)
   }
 }
 
-// computes the per-layer contribution to each vertex's degree
-// this requires every vertex to belong to exactly one layer
-vector<vector<double> > Graph::compute_degree_by_layers()
-{
+// initialize the per-layer contribution to each vertex's in/out degree
+void Graph::init_layer_strength() {
   size_t layers = this->lcount();
   size_t n = this->vcount();
   size_t m = this->ecount();
 
-  vector<vector<double> > degree_by_layers(n);
+  vector<vector<double> > layer_strength_in(n);
+  vector<vector<double> > layer_strength_out(n);
   for (size_t v = 0; v < n; ++v)
-    degree_by_layers[v].resize(layers);
-
-  igraph_integer_t v, u;
-  double w;
-  for (size_t e = 0; e < m; ++e)
   {
-    w = this->edge_weight(e);
-    igraph_edge(this->_graph, e, &v, &u);
-    degree_by_layers[v][this->layer_membership(u)] += w;
+    layer_strength_in.resize(layers);
+    layer_strength_out.resize(layers);
   }
 
-  return degree_by_layers;
+  igraph_integer_t v, u;
+  for (size_t e = 0; e < m; ++e)
+  {
+    igraph_edge(this->_graph, e, &v, &u);
+
+    // TODO: verify igraph stores directed edges as v->u
+    // TODO: verify meaning of singlelayer in/out strength
+    for (size_t l = 0; l < layers; ++l) {
+      layer_strength_in[u][l] += this->edge_layer_weight(e, l);
+      layer_strength_out[v][l] += this->edge_layer_weight(e, l);
+    }
+  }
+
+  this->_layer_strength_in = layer_strength_in;
+  this->_layer_strength_out = layer_strength_out;
 }
 
 vector<vector<double> > Graph::collapse_edge_layer_weights(MutableVertexPartition *partition)

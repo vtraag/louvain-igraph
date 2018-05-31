@@ -198,7 +198,16 @@ class Graph
     }
     inline size_t layer_membership(size_t v) { return this->_layer_vec[v]; }
 
-    vector<vector<double> > compute_degree_by_layers();
+    inline vector<double> degree_by_layers(size_t v) { return this->_layer_strength_in[v]; }
+
+    inline vector<double> layer_strength(size_t v, igraph_neimode_t mode) {
+      if (mode == IGRAPH_IN)
+        return this->_layer_strength_in[v];
+      else if (mode == IGRAPH_OUT)
+        return this->_layer_strength_out[v];
+      else
+        throw Exception("Incorrect mode specified.");
+    }
 
   protected:
 
@@ -224,6 +233,11 @@ class Graph
     void init_edge_layer_weights(vector<size_t> const &layer_vec);
     size_t _layer_count;
     vector<size_t> _layer_vec;
+    void init_layer_strength();
+
+    vector<vector<double> > _layer_strength_in;
+    // _layer_strength_out is degree_by_layers
+    vector<vector<double> > _layer_strength_out;
 
     void cache_neighbours(size_t v, igraph_neimode_t mode);
     vector<size_t> _cached_neighs_from; size_t _current_node_cache_neigh_from;
