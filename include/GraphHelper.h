@@ -192,6 +192,10 @@ class Graph
     inline void set_layer_count(size_t n) { this->_layer_count = n; };
     inline vector<double> edge_layer_weights(size_t e) { return this->_edge_layer_weights[e]; };
     inline double edge_layer_weight(size_t e, size_t l) { return this->_edge_layer_weights[e][l]; };
+    inline void set_edge_layer_weights(vector<vector<double> > &edge_layer_weights)
+    {
+      this->_edge_layer_weights = edge_layer_weights;
+    }
 
   protected:
 
@@ -214,7 +218,7 @@ class Graph
 
     // TODO: consider using vector<map<size_t, double>> for layer-sparse graphs
     vector<vector<double> > _edge_layer_weights;
-    void set_edge_layer_weights(vector<size_t> const &layer_vec);
+    void init_edge_layer_weights(vector<size_t> const &layer_vec);
     size_t _layer_count;
 
     void cache_neighbours(size_t v, igraph_neimode_t mode);

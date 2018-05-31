@@ -538,11 +538,13 @@ pair<size_t, size_t> Graph::get_endpoints(size_t e)
   return make_pair<size_t, size_t>((size_t)from, (size_t)to);
 }
 
-void Graph::set_edge_layer_weights(vector<size_t> const &layer_vec)
+void Graph::init_edge_layer_weights(vector<size_t> const &layer_vec)
 {
+  size_t layers = *std::max_element(layer_vec.begin(), layer_vec.end());
+  this->set_layer_count(layers);
+
   size_t n = this->vcount();
   size_t m = this->ecount();
-  size_t layers = this->lcount();
 
   this->_edge_layer_weights.clear();
   this->_edge_layer_weights.resize(n);
@@ -848,6 +850,13 @@ Graph* Graph::collapse_graph(MutableVertexPartition* partition)
     csizes[c] = partition->csize(c);
 
   Graph* G = new Graph(graph, collapsed_weights, csizes, this->_correct_self_loops);
+
+  if (!this->is_singlelayer())
+  {
+    vector<vector<double> > new_edge_layer_weights = this->collapse_edge_layer_weights(partition);
+    this->set_edge_layer_weights(new_edge_layer_weights);
+  }
+
   G->_remove_graph = true;
   #ifdef DEBUG
     cerr << "exit Graph::collapse_graph(vector<size_t> membership)" << endl << endl;
