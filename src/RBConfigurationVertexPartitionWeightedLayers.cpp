@@ -125,6 +125,7 @@ vector <double> RBConfigurationVertexPartitionWeightedLayers::add_vectors(vector
     }
 
     return outvec;
+    }
 
 vector <double> RBConfigurationVertexPartitionWeightedLayers::multiply_vectors_elementwise(vector<double> &v1, vector<double> &v2){
 
@@ -139,6 +140,7 @@ vector <double> RBConfigurationVertexPartitionWeightedLayers::multiply_vectors_e
     }
 
     return outvec;
+    }
 
 vector <double> RBConfigurationVertexPartitionWeightedLayers::divide_vectors_elementwise(vector<double> &v1, vector<double> &v2){
 
@@ -153,6 +155,7 @@ vector <double> RBConfigurationVertexPartitionWeightedLayers::divide_vectors_ele
     }
 
     return outvec;
+    }
 
 double RBConfigurationVertexPartitionWeightedLayers::dot_product(vector<double> &v1, vector<double> &v2){
 
@@ -168,7 +171,7 @@ double RBConfigurationVertexPartitionWeightedLayers::dot_product(vector<double> 
 
     return outvec;
 }
-}
+
 
 
 //helper method for totalling weight vectors
@@ -186,10 +189,12 @@ vector <double> RBConfigurationVertexPartitionWeightedLayers::subtract_vectors(v
 }
 //for multiply vector by scalar
 vector <double> RBConfigurationVertexPartitionWeightedLayers::scalar_multiply(double scalar, vector<double> &v1){
+    vector <double> outvec(v1.size(),0)
     for (size_t i=0;i<v1.size();i++){
 
-        v1[i]=scalar*v1[i];
+        outvec[i]=scalar*v1[i];
     }
+    return outvec;
 }
 //sum all of the elements within a vector
 double RBConfigurationVertexPartitionWeightedLayers::sum_over_vector(vector<double> &v1){
@@ -534,8 +539,8 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
   size_t old_comm = this->_membership[v];
   double diff = 0.0;
   //if graph is directed
-//  vector <double> total_weight = this->scalar_multiply(_total_layer_weights,1/(this->graph->is_directed()));
-  vector <double> total_weight = this->_total_layer_weights;
+  vector <double> total_weight = this->scalar_multiply(2.0 - this->graph->is_directed(),_total_layer_weights);
+//  vector <double> total_weight = this->_total_layer_weights;
 
   if (this->sum_over_vector(total_weight) == 0.0)
     return 0.0;
@@ -547,8 +552,8 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
     double w_to_new = this->weight_to_comm_by_layer(v, new_comm);
     double w_from_new = this->weight_from_comm_by_layer(v, new_comm);
 
-    double k_out = this->graph->strength_by_layer(v, IGRAPH_OUT);
-    double k_in = this->graph->strength_by_layer(v, IGRAPH_IN);
+    double k_out = this->graph->layer_strength_out[v];
+    double k_in = this->graph->layer_strength_in[v];
 
     double self_weight = this->graph->node_self_weight(v);
 
@@ -569,7 +574,7 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
 
     double diff_new=this->sum_over_vector(w_to_new);
     diff_new-=this->resolution_parameter*this->new(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_out,K_in_new),total_weight));
-    diff_new+=(this->sum_over_vector(w_from_new)+self_weight);//self_weight should be scaler
+    diff_new+=(this->sum_over_vector(w_from_new)+self_weight);//self_weight should be scalar
     diff_new-=( this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_in,K_out_new),total_weight)) )
 
 
@@ -600,15 +605,14 @@ double RBConfigurationVertexPartitionWeightedLayers::quality(double resolution_p
   #ifdef DEBUG
     cerr << "double ModularityVertexPartition::quality()" << endl;
   #endif
-  double mod = 0.0;
 
-  vector<double> m = this->_total_layer_weights;
-//  if (this->graph->is_directed())
-//    m = this->graph->total_weight();
-//  else
-//    m = 2*this->graph->total_weight();
+  vector<double> m;
+  if (this->graph->is_directed())
+    m = this->graph->total_weight();
+  else
+    m = this->scalar_multiply(2,this->graph->total_weight());
 
-  if (m == 0)
+  if (this->sum_over_vector(m) == 0)
     return 0.0;
 
   for (size_t c = 0; c < this->nb_communities(); c++)
@@ -620,11 +624,11 @@ double RBConfigurationVertexPartitionWeightedLayers::quality(double resolution_p
       size_t csize = this->csize(c);
       cerr << "\t" << "Comm: " << c << ", size=" << csize << ", w=" << w << ", w_out=" << w_out << ", w_in=" << w_in << "." << endl;
     #endif
-    mod += this->sum_over_vector(this->subract_vectors(w,this->divide_vectors_elementwise(this->multiply_vectors_elementwise(w_out,w_in),m)))
+    mod += this->sum_over_vector(this->subract_vectors(w,this->divide_vectors_elementwise(this->multiply_vectors_elementwise(w_out,w_in),this->scalar_multiply(this->graph->is_directed() ? 1.0 : 4.0,m))));
 //    mod += w - resolution_parameter*w_out*w_in/((this->graph->is_directed() ? 1.0 : 4.0)*this->graph->total_weight());
   }
-  double q = mod; //factor of 2 should be account for
-//  double q = (2.0 - this->graph->is_directed())*mod;
+//  double q = mod; //factor of 2 should be account for
+  double q = (2.0 - this->graph->is_directed())*mod;
 
   #ifdef DEBUG
     cerr << "exit double RBConfigurationVertexPartitionWeightedLayers::quality()" << endl;
