@@ -433,6 +433,9 @@ void Graph::init_admin()
   double w = this->total_weight();
   size_t n_size = this->total_size();
 
+  // default to single-layer graph
+  this->_layer_count = 1;
+
   // For now we default to not correcting self loops.
   // this->_correct_self_loops = false; (remove this as this is set in the constructor)
 
@@ -535,14 +538,16 @@ pair<size_t, size_t> Graph::get_endpoints(size_t e)
   return make_pair<size_t, size_t>((size_t)from, (size_t)to);
 }
 
-void Graph::set_edge_layer_weights(vector<size_t> const &layer_vec)
+// initializes the per-layer contribution to each edge's weight
+void Graph::init_edge_layer_weights(vector<size_t> const &layer_vec)
 {
-  size_t n = this->vcount();
+  size_t layers = *std::max_element(layer_vec.begin(), layer_vec.end());
+  this->set_layer_count(layers);
+
   size_t m = this->ecount();
-  size_t layers = this->lcount();
 
   this->_edge_layer_weights.clear();
-  this->_edge_layer_weights.resize(n);
+  this->_edge_layer_weights.resize(m);
   for (size_t v = 0; v < layers; ++v)
   {
     this->_edge_layer_weights[v].clear();
@@ -557,8 +562,39 @@ void Graph::set_edge_layer_weights(vector<size_t> const &layer_vec)
     igraph_edge(this->_graph, e, &v, &u);
 
     // TODO: check undirected edges are stored in the same way as directed ones
-    this->_edge_layer_weights[v][layer_vec[u]] += w;
+    this->_edge_layer_weights[e][layer_vec[u]] += w;
   }
+}
+
+// initialize the per-layer contribution to each vertex's in/out degree
+void Graph::init_layer_strength() {
+  size_t layers = this->lcount();
+  size_t n = this->vcount();
+  size_t m = this->ecount();
+
+  vector<vector<double> > layer_strength_in(n);
+  vector<vector<double> > layer_strength_out(n);
+  for (size_t v = 0; v < n; ++v)
+  {
+    layer_strength_in.resize(layers);
+    layer_strength_out.resize(layers);
+  }
+
+  igraph_integer_t v, u;
+  for (size_t e = 0; e < m; ++e)
+  {
+    igraph_edge(this->_graph, e, &v, &u);
+
+    // TODO: verify igraph stores directed edges as v->u
+    // TODO: verify meaning of singlelayer in/out strength
+    for (size_t l = 0; l < layers; ++l) {
+      layer_strength_in[u][l] += this->edge_layer_weight(e, l);
+      layer_strength_out[v][l] += this->edge_layer_weight(e, l);
+    }
+  }
+
+  this->_layer_strength_in = layer_strength_in;
+  this->_layer_strength_out = layer_strength_out;
 }
 
 vector<vector<double> > Graph::collapse_edge_layer_weights(MutableVertexPartition *partition)
@@ -845,6 +881,13 @@ Graph* Graph::collapse_graph(MutableVertexPartition* partition)
     csizes[c] = partition->csize(c);
 
   Graph* G = new Graph(graph, collapsed_weights, csizes, this->_correct_self_loops);
+
+  if (!this->is_singlelayer())
+  {
+    vector<vector<double> > new_edge_layer_weights = this->collapse_edge_layer_weights(partition);
+    this->set_edge_layer_weights(new_edge_layer_weights);
+  }
+
   G->_remove_graph = true;
   #ifdef DEBUG
     cerr << "exit Graph::collapse_graph(vector<size_t> membership)" << endl << endl;

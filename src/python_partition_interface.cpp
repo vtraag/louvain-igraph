@@ -605,16 +605,15 @@ extern "C"
   {
     PyObject* py_obj_graph = NULL;
     PyObject* py_layer_vec = NULL;
-    PyObject* py_degrees_by_layers = NULL;
     PyObject* py_initial_membership = NULL;
     PyObject* py_weights = NULL;
 
     double resolution_parameter = 1.0;
 
-    static char* kwlist[] = {"graph", "layer_vec", "degrees_by_layers", "initial_membership", "weights", "resolution_parameter", NULL};
+    static char* kwlist[] = {"graph", "layer_vec", "initial_membership", "weights", "resolution_parameter", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOO|OOd", kwlist,
-                                     &py_obj_graph, &py_layer_vec, &py_degrees_by_layers,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OO|OOd", kwlist,
+                                     &py_obj_graph, &py_layer_vec,
                                      &py_initial_membership, &py_weights, &resolution_parameter))
       return NULL;
 
@@ -680,7 +679,6 @@ extern "C"
         }
       }
 
-
       // If necessary create an initial partition
       if (py_initial_membership != NULL && py_initial_membership != Py_None)
       {
@@ -710,10 +708,10 @@ extern "C"
           }
         }
 
-        partition = new RBConfigurationVertexPartitionWeightedLayers(graph, layer_vec, degrees_by_layers, initial_membership, resolution_parameter);
+        partition = new RBConfigurationVertexPartitionWeightedLayers(graph, layer_vec, initial_membership, resolution_parameter);
       }
       else
-        partition = new RBConfigurationVertexPartitionWeightedLayers(graph, layer_vec, degrees_by_layers, resolution_parameter);
+        partition = new RBConfigurationVertexPartitionWeightedLayers(graph, layer_vec, resolution_parameter);
 
       // Do *NOT* forget to remove the graph upon deletion
       partition->destructor_delete_graph = true;
