@@ -57,7 +57,7 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     size_t _nb_layers;
     vector<size_t> const _layer_vec;
     vector<vector<double> > const _degree_by_layers;
-    vector<double> const _total_layer_weights;
+    vector<double>  _total_layer_weights;
 
 
 
@@ -70,9 +70,9 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     vector<vector<double> > _total_weight_from_comm_by_layer;
     // Keep track of the total internal weight
     vector <double> _total_weight_in_all_comms_by_layer;
+    size_t _total_possible_edges_in_all_comms;
 
     vector<size_t> _empty_communities;
-
 
 
     //these are the same as the inherited class

@@ -181,7 +181,7 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
   }
 
   size_t nb_layers=0;
-  for (size_t i = 0; i < this->_layer_vec ; i++)
+  for (size_t i = 0; i < this->_layer_vec.size() ; i++)
   {
     if (this->_layer_vec[i] + 1 > nb_layers)
       nb_layers = this->_layer_vec[i] + 1;
@@ -192,9 +192,9 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
   for (size_t i = 0; i < nb_comms; i++)
     this->community.push_back(new set<size_t>());
 
-  this->_clear_resize(_total_weight_in_comm_by_layer,nb_comms,nb_layers)
-  this->_clear_resize(_total_weight_to_comm_by_layer,nb_comms,nb_layers)
-  this->_clear_resize(_total_weight_from_comm_by_layer,nb_comms,nb_layers)
+  this->_clear_resize(_total_weight_in_comm_by_layer,nb_comms,nb_layers);
+  this->_clear_resize(_total_weight_to_comm_by_layer,nb_comms,nb_layers);
+  this->_clear_resize(_total_weight_from_comm_by_layer,nb_comms,nb_layers);
 
   this->_csize.clear();
   this->_csize.resize(nb_comms);
@@ -203,7 +203,8 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
   this->_current_node_cache_community_to = n + 1;   this->_clear_resize(_cached_weight_to_community,n,nb_layers);
   this->_current_node_cache_community_all = n + 1;  this->_clear_resize(_cached_weight_all_community,n,nb_layers);
 
-  this->_total_weight_in_all_comms = 0.0;
+  this->_total_weight_in_all_comms_by_layer.resize(this->nb_layers());
+
   for (size_t v = 0; v < n; v++)
   {
     size_t v_comm = this->_membership[v];
@@ -229,12 +230,12 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
 
 
     // Add weight to the outgoing weight of community of v
-    this->_total_weight_from_comm[v_comm]=this->add_vectors(_total_weight_from_comm[v_comm],w_layers);
+    this->_total_weight_from_comm_by_layer[v_comm]=this->add_vectors(_total_weight_from_comm_by_layer[v_comm],w_layers);
     #ifdef DEBUG
       cerr << "\t" << "Add (" << v << ", " << u << ") weight " << w << " to from_comm " << v_comm <<  "." << endl;
     #endif
     // Add weight to the incoming weight of community of u
-    this->_total_weight_to_comm[u_comm] = this->add_vectors(_total_weight_to_comm[u_comm],w_layers);
+    this->_total_weight_from_comm_by_layer[u_comm] = this->add_vectors(_total_weight_from_comm_by_layer[u_comm],w_layers);
     #ifdef DEBUG
       cerr << "\t" << "Add (" << v << ", " << u << ") weight " << w << " to to_comm " << u_comm << "." << endl;
     #endif
@@ -243,17 +244,17 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
       #ifdef DEBUG
         cerr << "\t" << "Add (" << u << ", " << v << ") weight " << w << " to from_comm " << u_comm <<  "." << endl;
       #endif
-      this->_total_weight_from_comm[u_comm] = this->add_vectors(_total_weight_from_comm[u_comm],w_layers);
+      this->_total_weight_from_comm_by_layer[u_comm] = this->add_vectors(_total_weight_from_comm_by_layer[u_comm],w_layers);
       #ifdef DEBUG
         cerr << "\t" << "Add (" << u << ", " << v << ") weight " << w << " to to_comm " << v_comm << "." << endl;
       #endif
-      this->_total_weight_to_comm[v_comm] = this->add_vectors(_total_weight_to_comm[v_comm],w_layers);
+      this->_total_weight_from_comm_by_layer[v_comm] = this->add_vectors(_total_weight_from_comm_by_layer[v_comm],w_layers);
     }
     // If it is an edge within a community
     if (v_comm == u_comm)
     {
-      this->_total_weight_in_comm[v_comm] = this->add_vectors(_total_weight_in_comm[v_comm],w_layers);
-      this->_total_weight_in_all_comms = this->add_vectors(_total_weight_in_all_comms,w_layers);
+      this->_total_weight_in_comm_by_layer[v_comm] = this->add_vectors(_total_weight_in_comm_by_layer[v_comm],w_layers);
+      this->_total_weight_in_all_comms_by_layer = this->add_vectors(_total_weight_in_all_comms_by_layer,w_layers);
       #ifdef DEBUG
         cerr << "\t" << "Add (" << v << ", " << u << ") weight " << w << " to in_comm " << v_comm << "." << endl;
       #endif
@@ -415,7 +416,7 @@ void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new
       if (mode == IGRAPH_OUT)
       {
         // Remove the weight from the outgoing weights of the old community
-        this->_total_weight_from_comm_by_layer[old_comm] = this->subract_vectors(this->_total_weight_from_comm_by_layer[old_comm],w_layer);
+        this->_total_weight_from_comm_by_layer[old_comm] = this->subtract_vectors(this->_total_weight_from_comm_by_layer[old_comm],w_layer);
         // Add the weight to the outgoing weights of the new community
         this->_total_weight_from_comm_by_layer[new_comm] = this->add_vectors(this->_total_weight_from_comm_by_layer[new_comm],w_layer);
         #ifdef DEBUG
@@ -428,9 +429,9 @@ void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new
       else if (mode == IGRAPH_IN)
       {
         // Remove the weight from the outgoing weights of the old community
-        this->_total_weight_to_comm[old_comm] = this->subract_vectors(this->_total_weight_to_comm[old_comm],w_layer);
+        this->_total_weight_to_comm_by_layer[old_comm] = this->subtract_vectors(this->_total_weight_to_comm_by_layer[old_comm],w_layer);
         // Add the weight to the outgoing weights of the new community
-        this->_total_weight_to_comm[new_comm] = this->add_vectors(this->_total_weight_to_comm[new_comm],w_layer);
+        this->_total_weight_to_comm_by_layer[new_comm] = this->add_vectors(this->_total_weight_to_comm_by_layer[new_comm],w_layer);
         #ifdef DEBUG
           cerr << "\t" << "Moving link (" << v << "-" << u << ") "
                << "incoming weight " << w
@@ -441,13 +442,13 @@ void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new
       else
         throw Exception("Incorrect mode for updating the admin.");
       // Get internal weight (if it is an internal edge)
-      double int_weight = this->scalar_multiply(w_layer,1/((this->graph->is_directed() ? 1.0 : 2.0)/( u == v ? 2.0 : 1.0));
+      vector<double> int_weight = this->scalar_multiply(1.0/((this->graph->is_directed() ? 1.0 : 2.0)/( u == v ? 2.0 : 1.0)),w_layer);
       // If it is an internal edge in the old community
       if (old_comm == u_comm)
       {
         // Remove the internal weight
-        this->_total_weight_in_comm[old_comm] = this->subract_vectors( this->_total_weight_in_comm[old_comm],int_weight);
-        this->_total_weight_in_all_comms = this->subract_vectors( _total_weight_in_all_comms, int_weight);
+        this->_total_weight_in_comm_by_layer[old_comm] = this->subtract_vectors( this->_total_weight_in_comm_by_layer[old_comm],int_weight);
+        this->_total_weight_in_all_comms_by_layer = this->subtract_vectors( _total_weight_in_all_comms_by_layer, int_weight);
         #ifdef DEBUG
           cerr << "\t" << "From link (" << v << "-" << u << ") "
                << "remove internal weight " << int_weight
@@ -459,8 +460,8 @@ void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new
       if ((new_comm == u_comm) || (u == v))
       {
         // Add the internal weight
-        this->_total_weight_in_comm[new_comm] = this->add_vectors( _total_weight_in_comm[new_comm], int_weight);
-        this->_total_weight_in_all_comms = this->add_vectors(_total_weight_in_all_comms, int_weight);
+        this->_total_weight_in_comm_by_layer[new_comm] = this->add_vectors( _total_weight_in_comm_by_layer[new_comm], int_weight);
+        this->_total_weight_in_all_comms_by_layer = this->add_vectors(_total_weight_in_all_comms_by_layer, int_weight);
         #ifdef DEBUG
           cerr << "\t" << "From link (" << v << "-" << u << ") "
                << "add internal weight " << int_weight
@@ -471,11 +472,11 @@ void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new
   }
   #ifdef DEBUG
     // Check this->_total_weight_in_all_comms
-    vector <double> check_total_weight_in_all_comms(self->nb_layers(),0);
+    vector <double> check_total_weight_in_all_comms_by_layer(self->nb_layers(),0);
     for (size_t c = 0; c < this->nb_communities(); c++)
-      check_total_weight_in_all_comms =this->add_vectors( this->total_weight_in_comm(c);
-    cerr << "Internal _total_weight_in_all_comms=" << this->_total_weight_in_all_comms
-         << ", calculated check_total_weight_in_all_comms=" << check_total_weight_in_all_comms << endl;
+      check_total_weight_in_all_comms_by_layer = this->add_vectors(check_total_weight_in_all_comms_by_layer, this->total_weight_in_comm_by_layer(c);
+    cerr << "Internal _total_weight_in_all_comms=" << this->sum_over_vector(this->_total_weight_in_all_comms_by_layer_
+         << ", calculated check_total_weight_in_all_comms=" << this->sum_over_vector(check_total_weight_in_all_comms_by_layer) << endl;
   #endif
   // Update the membership vector
   this->_membership[v] = new_comm;
@@ -494,8 +495,9 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
   #endif
   size_t old_comm = this->_membership[v];
   double diff = 0.0;
+
   //if graph is directed
-  vector <double> total_weight = this->scalar_multiply(2.0 - this->graph->is_directed(),_total_layer_weights);
+  vector <double> total_weight = this->scalar_multiply(2.0 - this->graph->is_directed(),this->_total_layer_weights);
 //  vector <double> total_weight = this->_total_layer_weights;
 
   if (this->sum_over_vector(total_weight) == 0.0)
@@ -503,23 +505,23 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
   if (new_comm != old_comm)
   {
 
-    double w_to_old = this->weight_to_comm_by_layer(v, old_comm);
-    double w_from_old = this->weight_from_comm_by_layer(v, old_comm);
-    double w_to_new = this->weight_to_comm_by_layer(v, new_comm);
-    double w_from_new = this->weight_from_comm_by_layer(v, new_comm);
+    vector<double> w_to_old = this->weight_to_comm_by_layer(v, old_comm);
+    vector<double> w_from_old = this->weight_from_comm_by_layer(v, old_comm);
+    vector<double> w_to_new = this->weight_to_comm_by_layer(v, new_comm);
+    vector<double> w_from_new = this->weight_from_comm_by_layer(v, new_comm);
 
-    double k_out = this->graph->layer_strength_out[v];
-    double k_in = this->graph->layer_strength_in[v];
+    vector<double> k_out = this->graph->layer_strength_out[v];
+    vector<double> k_in = this->graph->layer_strength_in[v];
 
     double self_weight = this->graph->node_self_weight(v);
 
-    double K_out_old = this->total_weight_from_comm_by_layer(old_comm);
+    vector<double> K_out_old = this->total_weight_from_comm_by_layer(old_comm);
 
-    double K_in_old = this->total_weight_to_comm_by_layer(old_comm);
+    vector<double> K_in_old = this->total_weight_to_comm_by_layer(old_comm);
 
-    double K_out_new = this->add_vectors(this->total_weight_from_comm_by_layer(new_comm),k_out);
+    vector<double> K_out_new = this->add_vectors(this->total_weight_from_comm_by_layer(new_comm),k_out);
 
-    double K_in_new = this->add_vectors(this->total_weight_to_comm_by_layer(new_comm), k_in);
+    vector<double> K_in_new = this->add_vectors(this->total_weight_to_comm_by_layer(new_comm), k_in);
 
 
     //vectorized versions
@@ -528,10 +530,10 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
     diff_old+=(this->sum_over_vector(w_from_old));
     diff_old-=( this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_in,K_out_old),total_weight)) )
 
-    double diff_new=this->sum_over_vector(w_to_new);
-    diff_new-=this->resolution_parameter*this->new(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_out,K_in_new),total_weight));
-    diff_new+=(this->sum_over_vector(w_from_new)+self_weight);//self_weight should be scalar
-    diff_new-=( this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_in,K_out_new),total_weight)) )
+    double diff_new = this->sum_over_vector(w_to_new);
+    diff_new -= this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_out,K_in_new),total_weight));
+    diff_new += (this->sum_over_vector(w_from_new)+self_weight);//self_weight should be scalar
+    diff_new -= ( this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_in,K_out_new),total_weight)) )
 
 
 //    double diff_old = (w_to_old - this->resolution_parameter*k_out*K_in_old/total_weight) + \
@@ -571,17 +573,19 @@ double RBConfigurationVertexPartitionWeightedLayers::quality(double resolution_p
   if (this->sum_over_vector(m) == 0)
     return 0.0;
 
+  double mod=0.0;
   for (size_t c = 0; c < this->nb_communities(); c++)
   {
-    vector <double> w = this->total_weight_in_comm_by_layer(c);
-    vector <double> w_out = this->total_weight_from_comm_by_layer(c);
-    vector <double> w_in = this->total_weight_to_comm_by_layer(c);
-    #ifdef DEBUG
-      size_t csize = this->csize(c);
-      cerr << "\t" << "Comm: " << c << ", size=" << csize << ", w=" << w << ", w_out=" << w_out << ", w_in=" << w_in << "." << endl;
-    #endif
-    mod += this->sum_over_vector(this->subract_vectors(w,this->divide_vectors_elementwise(this->multiply_vectors_elementwise(w_out,w_in),this->scalar_multiply(this->graph->is_directed() ? 1.0 : 4.0,m))));
-//    mod += w - resolution_parameter*w_out*w_in/((this->graph->is_directed() ? 1.0 : 4.0)*this->graph->total_weight());
+        vector <double> w = this->total_weight_in_comm_by_layer(c);
+        vector <double> w_out = this->total_weight_from_comm_by_layer(c);
+        vector <double> w_in = this->total_weight_to_comm_by_layer(c);
+        #ifdef DEBUG
+          size_t csize = this->csize(c);
+          cerr << "\t" << "Comm: " << c << ", size=" << csize << ", w=" << w << ", w_out=" << w_out << ", w_in=" << w_in << "." << endl;
+        #endif
+
+        mod += this->sum_over_vector(this->subtract_vectors(w,this->divide_vectors_elementwise(this->multiply_vectors_elementwise(w_out,w_in),this->scalar_multiply(this->graph->is_directed() ? 1.0 : 4.0,m))));
+    //    mod += w - resolution_parameter*w_out*w_in/((this->graph->is_directed() ? 1.0 : 4.0)*this->graph->total_weight());
   }
 //  double q = mod; //factor of 2 should be account for
   double q = (2.0 - this->graph->is_directed())*mod;
