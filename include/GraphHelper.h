@@ -149,7 +149,7 @@ class Graph
       return this->_edge_weights[e];
     };
 
-    inline double edge_weight_layers(size_t e)
+    inline vector<double> edge_weight_layers(size_t e)
     {
       #ifdef DEBUG
       if (e > this->_edge_layer_weights.size())

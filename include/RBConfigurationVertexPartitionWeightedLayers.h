@@ -31,6 +31,7 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     inline vector<double> total_weight_in_all_comms_by_layer() { return this->_total_weight_in_all_comms_by_layer; };
     inline size_t nb_layers() {return this->_nb_layers;};
 
+
   protected:
 
     virtual void init_admin();
@@ -70,7 +71,7 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     vector<size_t> _empty_communities;
 
 
-    //these are the same as the inherited class
+
     size_t _current_node_cache_community_from; vector<vector<double> > _cached_weight_from_community; vector<size_t> _cached_neigh_comms_from;
     size_t _current_node_cache_community_to;   vector<vector<double> > _cached_weight_to_community;   vector<size_t> _cached_neigh_comms_to;
     size_t _current_node_cache_community_all;  vector<vector<double> > _cached_weight_all_community;  vector<size_t> _cached_neigh_comms_all;
