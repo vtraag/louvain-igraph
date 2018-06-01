@@ -508,8 +508,8 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
     vector<double> w_to_new = this->weight_to_comm_by_layer(v, new_comm);
     vector<double> w_from_new = this->weight_from_comm_by_layer(v, new_comm);
 
-    vector<double> k_out = this->graph->layer_strength_out[v];
-    vector<double> k_in = this->graph->layer_strength_in[v];
+    vector<double> k_out = this->graph->layer_strength(v,IGRAPH_OUT);
+    vector<double> k_in = this->graph->layer_strength(v,IGRAPH_IN);
 
     double self_weight = this->graph->node_self_weight(v);
 
@@ -517,21 +517,36 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
 
     vector<double> K_in_old = this->total_weight_to_comm_by_layer(old_comm);
 
-    vector<double> K_out_new = this->add_vectors(this->total_weight_from_comm_by_layer(new_comm),k_out);
+    vector<double> temp = this->total_weight_from_comm_by_layer(new_comm);
 
-    vector<double> K_in_new = this->add_vectors(this->total_weight_to_comm_by_layer(new_comm), k_in);
+    vector<double> K_out_new = this->add_vectors(temp,k_out);
+
+    temp = this->total_weight_to_comm_by_layer(new_comm);
+
+    vector<double> K_in_new = this->add_vectors(temp, k_in);
 
 
     //vectorized versions
     double diff_old=this->sum_over_vector(w_to_old);
-    diff_old-=this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_out,K_in_old),total_weight));
+
+
+    temp=this->multiply_vectors_elementwise(k_out,K_in_old);
+    temp=this->divide_vectors_elementwise(temp,total_weight);
+    diff_old-=this->resolution_parameter*this->sum_over_vector(temp);
     diff_old+=(this->sum_over_vector(w_from_old));
-    diff_old-=( this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_in,K_out_old),total_weight)) )
+    temp=this->multiply_vectors_elementwise(k_in,K_out_old);
+    temp=this->divide_vectors_elementwise(temp,total_weight);
+    diff_old-=(this->resolution_parameter*this->sum_over_vector(temp));
+
 
     double diff_new = this->sum_over_vector(w_to_new);
-    diff_new -= this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_out,K_in_new),total_weight));
+    temp=this->multiply_vectors_elementwise(k_out,K_in_new);
+    temp=this->divide_vectors_elementwise(temp,total_weight);
+    diff_new -= this->resolution_parameter*this->sum_over_vector(temp);
     diff_new += (this->sum_over_vector(w_from_new)+self_weight);//self_weight should be scalar
-    diff_new -= ( this->resolution_parameter*this->sum_over_vector(this->divide_vectors_elementwise(this->multiply_vectors_elementwise(k_in,K_out_new),total_weight)) )
+    temp = this->multiply_vectors_elementwise(k_in,K_out_new);
+    temp = this->divide_vectors_elementwise(temp,total_weight);
+    diff_new -= (this->resolution_parameter*this->sum_over_vector(temp));
 
 
 //    double diff_old = (w_to_old - this->resolution_parameter*k_out*K_in_old/total_weight) + \
@@ -564,14 +579,17 @@ double RBConfigurationVertexPartitionWeightedLayers::quality(double resolution_p
 
   vector<double> m;
   if (this->graph->is_directed())
-    m = this->graph->total_weight();
+    m = this->_total_layer_weights;
   else
-    m = this->scalar_multiply(2,this->graph->total_weight());
+    m = this->scalar_multiply(2,this->_total_layer_weights);
 
   if (this->sum_over_vector(m) == 0)
     return 0.0;
 
   double mod=0.0;
+  vector <double> temp;
+  //divisor of null model part
+  vector <double> mdiv = this->scalar_multiply(this->graph->is_directed() ? 1.0 : 4.0,m);
   for (size_t c = 0; c < this->nb_communities(); c++)
   {
         vector <double> w = this->total_weight_in_comm_by_layer(c);
@@ -582,7 +600,11 @@ double RBConfigurationVertexPartitionWeightedLayers::quality(double resolution_p
           cerr << "\t" << "Comm: " << c << ", size=" << csize << ", w=" << w << ", w_out=" << w_out << ", w_in=" << w_in << "." << endl;
         #endif
 
-        mod += this->sum_over_vector(this->subtract_vectors(w,this->divide_vectors_elementwise(this->multiply_vectors_elementwise(w_out,w_in),this->scalar_multiply(this->graph->is_directed() ? 1.0 : 4.0,m))));
+        temp=this->multiply_vectors_elementwise(w_out,w_in);
+        temp=this->divide_vectors_elementwise(temp,mdiv);
+        temp=this->subtract_vectors(w,temp);
+        mod+=this->sum_over_vector(temp);
+
     //    mod += w - resolution_parameter*w_out*w_in/((this->graph->is_directed() ? 1.0 : 4.0)*this->graph->total_weight());
   }
 //  double q = mod; //factor of 2 should be account for
@@ -592,5 +614,5 @@ double RBConfigurationVertexPartitionWeightedLayers::quality(double resolution_p
     cerr << "exit double RBConfigurationVertexPartitionWeightedLayers::quality()" << endl;
     cerr << "return " << q << endl << endl;
   #endif
-  return q;
+  return q/this->sum_over_vector(m); //this appears to be missing from original RBC
 }

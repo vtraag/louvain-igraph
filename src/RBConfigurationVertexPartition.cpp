@@ -157,5 +157,5 @@ double RBConfigurationVertexPartition::quality(double resolution_parameter)
     cerr << "exit double RBConfigurationVertexPartition::quality()" << endl;
     cerr << "return " << q << endl << endl;
   #endif
-  return q;
+  return q/m;
 }
