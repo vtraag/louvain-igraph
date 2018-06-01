@@ -552,8 +552,10 @@ void RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities_by_la
   for (vector<size_t>::iterator it = _cached_neighs->begin();
        it != _cached_neighs->end();
        it++)
+       {
        vector<double> temp (this->nb_layers(),0);
        (*_cached_weight_tofrom_community)[*it] = temp;
+       }
 
   // Loop over all incident edges
   vector<size_t> const& neighbours = this->graph->get_neighbours(v, mode);
