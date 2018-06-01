@@ -848,6 +848,8 @@ class RBConfigurationVertexPartitionWeightedLayers(LinearResolutionParameterVert
         # Make sure it is a list
         weights = list(weights)
 
+	layer_vec=list(layer_vec) #ensure that it is a list
+
     self._partition = _c_louvain._new_RBConfigurationVertexPartitionWeightedLayers(pygraph_t, layer_vec,
                                 initial_membership, weights, resolution_parameter)
     self._update_internal_membership()

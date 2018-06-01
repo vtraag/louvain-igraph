@@ -57,7 +57,6 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
 
 
 
-
     // Keep track of the internal weight of each community for each layer
     vector<vector<double> > _total_weight_in_comm_by_layer;
     // Keep track of the total weight to a community

@@ -410,7 +410,7 @@ void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new
       size_t u_comm = this->_membership[u];
       // Get the weight of the edge
 //      double w=this->graph->edge_weight(e)
-      vector<double> w_layer = this->graph->edge_layer_weights(e);
+      vector<double> w_layer = this->graph->edge_weight_layers(e);
       if (mode == IGRAPH_OUT)
       {
         // Remove the weight from the outgoing weights of the old community
@@ -482,6 +482,161 @@ void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new
     cerr << "exit MutableVertexPartition::move_node(" << v << ", " << new_comm << ")" << endl << endl;
   #endif
 }
+
+/****************************************************************************
+ Calculate what is the total weight going from a node to a community.
+
+    Parameters:
+      v      -- The node which to check.
+      comm   -- The community which to check.
+*****************************************************************************/
+vector<double> MutableVertexPartition::weight_to_comm(size_t v, size_t comm)
+{
+  if (this->_current_node_cache_community_to != v)
+  {
+    this->cache_neigh_communities(v, IGRAPH_OUT);
+    this->_current_node_cache_community_to = v;
+  }
+
+  return this->_cached_weight_to_community[comm];
+}
+
+/****************************************************************************
+ Calculate what is the total weight going from a community to a node.
+
+    Parameters:
+      v      -- The node which to check.
+      comm   -- The community which to check.
+*****************************************************************************/
+vector<double> RBConfigurationVertexPartitionWeightedLayers::weight_from_comm(size_t v, size_t comm)
+{
+  if (this->_current_node_cache_community_from != v)
+  {
+    this->cache_neigh_communities(v, IGRAPH_IN);
+    this->_current_node_cache_community_from = v;
+  }
+
+  return this->_cached_weight_from_community[comm];
+}
+
+void RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities(size_t v, igraph_neimode_t mode)
+{
+  // TODO: We can probably calculate at once the IN, OUT and ALL
+  // rather than this being called multiple times.
+
+  // Weight between vertex and community
+  #ifdef DEBUG
+    cerr << "double RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities(" << v << ", " << mode << ")." << endl;
+  #endif
+  vector<vector<double> >* _cached_weight_tofrom_community = NULL;
+  vector<size_t>* _cached_neighs = NULL;
+  switch (mode)
+  {
+    case IGRAPH_IN:
+      _cached_weight_tofrom_community = &(this->_cached_weight_from_community);
+      _cached_neighs = &(this->_cached_neigh_comms_from);
+      break;
+    case IGRAPH_OUT:
+      _cached_weight_tofrom_community = &(this->_cached_weight_to_community);
+      _cached_neighs = &(this->_cached_neigh_comms_to);
+      break;
+    case IGRAPH_ALL:
+      _cached_weight_tofrom_community = &(this->_cached_weight_all_community);
+      _cached_neighs = &(this->_cached_neigh_comms_all);
+      break;
+  }
+
+  // Reset cached communities
+  for (vector<size_t>::iterator it = _cached_neighs->begin();
+       it != _cached_neighs->end();
+       it++)
+       (*_cached_weight_tofrom_community)[*it] = 0;
+
+  // Loop over all incident edges
+  vector<size_t> const& neighbours = this->graph->get_neighbours(v, mode);
+  vector<size_t> const& neighbour_edges = this->graph->get_neighbour_edges(v, mode);
+
+  size_t degree = neighbours.size();
+
+  // Reset cached neighbours
+  _cached_neighs->clear();
+  _cached_neighs->reserve(degree);
+  for (size_t idx = 0; idx < degree; idx++)
+  {
+    size_t u = neighbours[idx];
+    size_t e = neighbour_edges[idx];
+
+    // If it is an edge to the requested community
+    #ifdef DEBUG
+      size_t u_comm = this->_membership[u];
+    #endif
+    size_t comm = this->_membership[u];
+    // Get the weight of the edge
+    vector< double> w = this->graph->edge_weight(e);
+    // Self loops appear twice here if the graph is undirected, so divide by 2.0 in that case.
+    if (u == v && !this->graph->is_directed())
+        w /= 2.0;
+    #ifdef DEBUG
+      cerr << "\t" << "Edge (" << v << "-" << u << "), Comm (" << comm << "-" << u_comm << ") weight: " << w << "." << endl;
+    #endif
+    (*_cached_weight_tofrom_community)[comm] += w;
+    // REMARK: Notice in the rare case of negative weights, being exactly equal
+    // for a certain community, that this community may then potentially be added multiple
+    // times to the _cached_neighs. However, I don' believe this causes any further issue,
+    // so that's why I leave this here as is.
+    if ((*_cached_weight_tofrom_community)[comm] != 0)
+      _cached_neighs->push_back(comm);
+  }
+  #ifdef DEBUG
+    cerr << "exit Graph::cache_neigh_communities(" << v << ", " << mode << ")." << endl;
+  #endif
+}
+
+vector<size_t> const& RBConfigurationVertexPartitionWeightedLayers::get_neigh_comms(size_t v, igraph_neimode_t mode)
+{
+  switch (mode)
+  {
+    case IGRAPH_IN:
+      if (this->_current_node_cache_community_from != v)
+      {
+        cache_neigh_communities(v, mode);
+        this->_current_node_cache_community_from = v;
+      }
+      return this->_cached_neigh_comms_from;
+    case IGRAPH_OUT:
+      if (this->_current_node_cache_community_to != v)
+      {
+        cache_neigh_communities(v, mode);
+        this->_current_node_cache_community_to = v;
+      }
+      return this->_cached_neigh_comms_to;
+    case IGRAPH_ALL:
+      if (this->_current_node_cache_community_all != v)
+      {
+        cache_neigh_communities(v, mode);
+        this->_current_node_cache_community_all = v;
+      }
+      return this->_cached_neigh_comms_all;
+  }
+  throw Exception("Problem obtaining neighbour communities, invalid mode.");
+}
+
+set<size_t>* RBConfigurationVertexPartitionWeightedLayers::get_neigh_comms(size_t v, igraph_neimode_t mode, vector<size_t> const& constrained_membership)
+{
+  size_t degree = this->graph->degree(v, mode);
+  vector<size_t> const& neigh = this->graph->get_neighbours(v, mode);
+  set<size_t>* neigh_comms = new set<size_t>();
+  for (size_t i=0; i < degree; i++)
+  {
+    size_t u = neigh[i];
+    if (constrained_membership[v] == constrained_membership[u])
+      neigh_comms->insert( this->membership(u) );
+  }
+  return neigh_comms;
+}
+
+
+
 
 /*****************************************************************************
   Returns the difference in modularity if we move a node to a new community

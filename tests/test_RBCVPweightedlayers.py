@@ -54,8 +54,7 @@ def test_multilayer_louvain():
 
 
 	RBCpartobj=louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
-														 layer_vec=list(mgraph.layer_vec),
-														 degree_by_layers=degree_by_layer.tolist() )
+														 layer_vec=mgraph.layer_vec)
 
 
 	print()
