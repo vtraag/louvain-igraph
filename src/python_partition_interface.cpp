@@ -648,37 +648,6 @@ extern "C"
         }
       }
 
-      vector<vector<double> > degrees_by_layers;
-      #ifdef DEBUG
-        cerr << "Reading layer total weights." << endl;
-      #endif
-      size_t m;
-      n = PyList_Size(py_degrees_by_layers);
-      degrees_by_layers.resize(n);
-      for (size_t v = 0; v < n; v++)
-      {
-        PyObject* py_item = PyList_GetItem(py_degrees_by_layers, v);
-        m = PyList_Size(py_item);
-        degrees_by_layers[v].resize(m);
-        for (size_t w = 0; w < m; w++)
-        {
-          PyObject* py_item_item = PyList_GetItem(py_item, w);
-          #ifdef IS_PY3K
-          if (PyFloat_Check(py_item_item) || PyLong_Check(py_item_item))
-          #else
-          if (PyFloat_Check(py_item_item) || PyInt_Check(py_item_item) || PyLong_Check(py_item_item))
-          #endif
-          {
-            degrees_by_layers[v][w] = PyFloat_AsDouble(py_item_item);
-          }
-          else
-          {
-            PyErr_SetString(PyExc_TypeError, "Expected float value for degree vector.");
-            return NULL;
-          }
-        }
-      }
-
       // If necessary create an initial partition
       if (py_initial_membership != NULL && py_initial_membership != Py_None)
       {
@@ -708,10 +677,11 @@ extern "C"
           }
         }
 
-        partition = new RBConfigurationVertexPartitionWeightedLayers(graph, layer_vec, initial_membership, resolution_parameter);
+        // TODO: determine if layer_vec initialization should be in the partition or the graph itself
+        partition = new RBConfigurationVertexPartitionWeightedLayers(graph, initial_membership, resolution_parameter);
       }
       else
-        partition = new RBConfigurationVertexPartitionWeightedLayers(graph, layer_vec, resolution_parameter);
+        partition = new RBConfigurationVertexPartitionWeightedLayers(graph, resolution_parameter);
 
       // Do *NOT* forget to remove the graph upon deletion
       partition->destructor_delete_graph = true;
