@@ -97,6 +97,7 @@ Graph::Graph(igraph_t* graph,
   this->set_self_weights();
   this->init_admin();
   this->init_edge_layer_weights();
+  this->init_layer_strength();
 }
 
 Graph::Graph(igraph_t* graph,
@@ -611,8 +612,8 @@ void Graph::init_layer_strength() {
   vector<vector<double> > layer_strength_out(n);
   for (size_t v = 0; v < n; ++v)
   {
-    layer_strength_in.resize(layers);
-    layer_strength_out.resize(layers);
+    layer_strength_in[v].resize(layers);
+    layer_strength_out[v].resize(layers);
   }
 
   igraph_integer_t v, u;
