@@ -91,12 +91,12 @@ Graph::Graph(igraph_t* graph,
   if (layer_vec.size() != this->vcount())
     throw Exception("Layer membership vector inconsistent length with the vertex count of the graph.");
   this->_layer_vec = layer_vec;
-  this->init_edge_layer_weights();
 
   // TODO: is node_self_weights necessary here?
   this->_correct_self_loops = correct_self_loops;
   this->set_self_weights();
   this->init_admin();
+  this->init_edge_layer_weights();
 }
 
 Graph::Graph(igraph_t* graph,
@@ -576,9 +576,8 @@ pair<size_t, size_t> Graph::get_endpoints(size_t e)
 void Graph::init_edge_layer_weights()
 {
   vector<size_t> const& layer_vec = this->layer_memberships();
-  size_t layers = *std::max_element(layer_vec.begin(), layer_vec.end())+1;
+  size_t layers = *std::max_element(layer_vec.begin(), layer_vec.end()) + 1;
   this->set_layer_count(layers);
-
   size_t m = this->ecount();
 
   // TODO: consider reversing indices to (slightly) reduce memory overhead here
