@@ -212,6 +212,7 @@ class Graph
     inline vector<size_t> const& layer_memberships() { return this->_layer_vec; }
     inline size_t layer_membership(size_t v) { return this->_layer_vec[v]; }
 
+    // note degree_by_layers is indexed with [vertex][layer]
     inline vector<vector<double> > const& degrees_by_layers() { return this->_layer_strength_in; }
     inline vector<double> const& degree_by_layers(size_t v) { return this->_layer_strength_in[v]; }
 

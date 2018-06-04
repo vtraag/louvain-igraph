@@ -58,11 +58,11 @@ RBConfigurationVertexPartitionWeightedLayers* RBConfigurationVertexPartitionWeig
 vector<double> RBConfigurationVertexPartitionWeightedLayers::_compute_total_layer_weights(vector<vector<double> > const& degree_by_layers)
 {
   vector<double> total_layer_weights;
-  total_layer_weights.resize(degree_by_layers.size());
+  total_layer_weights.resize(this->graph->lcount());
 
-  for (size_t l = 0; l < degree_by_layers.size(); ++l)
-    for (size_t v = 0; v < degree_by_layers[l].size(); ++v)
-      total_layer_weights[l] += degree_by_layers[l][v];
+  for (size_t v = 0; v < degree_by_layers.size(); ++v)
+    for (size_t l = 0; l < degree_by_layers[v].size(); ++l)
+      total_layer_weights[l] += degree_by_layers[v][l];
 
   return total_layer_weights;
 }
@@ -594,8 +594,6 @@ void RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities_by_la
     cerr << "exit Graph::cache_neigh_communities_by_layer(" << v << ", " << mode << ")." << endl;
   #endif
 }
-
-
 
 
 
