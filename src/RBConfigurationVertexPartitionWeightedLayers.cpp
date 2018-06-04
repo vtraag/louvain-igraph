@@ -6,7 +6,7 @@ RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeig
       _layer_vec(graph->layer_memberships()), _degree_by_layers(graph->degrees_by_layers()),
       _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
 {
-    init_admin();
+  init_admin();
 }
 
 RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(Graph *graph,
@@ -15,7 +15,7 @@ RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeig
       _degree_by_layers(graph->degrees_by_layers()),
       _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
 {
-   init_admin();
+  init_admin();
 }
 
 RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeightedLayers(Graph *graph,
@@ -24,7 +24,7 @@ RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeig
       _degree_by_layers(graph->degrees_by_layers()),
       _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
 {
- init_admin();
+  init_admin();
 }
 
 
@@ -33,13 +33,11 @@ RBConfigurationVertexPartitionWeightedLayers::RBConfigurationVertexPartitionWeig
       _degree_by_layers(graph->degrees_by_layers()),
       _total_layer_weights(_compute_total_layer_weights(_degree_by_layers))
 {
-init_admin();
+  init_admin();
 }
 
 RBConfigurationVertexPartitionWeightedLayers::~RBConfigurationVertexPartitionWeightedLayers()
-{
- init_admin();
-}
+{ }
 
 //CREATE METHODS
 RBConfigurationVertexPartitionWeightedLayers* RBConfigurationVertexPartitionWeightedLayers::create(Graph* graph)
