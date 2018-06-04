@@ -648,6 +648,8 @@ extern "C"
         }
       }
 
+      graph->set_layer_membership(layer_vec);
+
       // If necessary create an initial partition
       if (py_initial_membership != NULL && py_initial_membership != Py_None)
       {

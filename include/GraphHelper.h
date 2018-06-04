@@ -207,6 +207,7 @@ class Graph
     }
     inline vector<size_t> const& layer_memberships() { return this->_layer_vec; }
     inline size_t layer_membership(size_t v) { return this->_layer_vec[v]; }
+    inline void set_layer_membership(vector<size_t> const& layer_vec) { this->_layer_vec = layer_vec; }
 
     inline vector<vector<double> > const& degrees_by_layers() { return this->_layer_strength_in; }
     inline vector<double> const& degree_by_layers(size_t v) { return this->_layer_strength_in[v]; }
@@ -241,7 +242,7 @@ class Graph
 
     // TODO: consider using vector<map<size_t, double>> for layer-sparse graphs
     vector<vector<double> > _edge_layer_weights;
-    void init_edge_layer_weights(vector<size_t> const &layer_vec);
+    void init_edge_layer_weights();
     size_t _layer_count;
     vector<size_t> _layer_vec;
     void init_layer_strength();

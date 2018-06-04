@@ -539,8 +539,9 @@ pair<size_t, size_t> Graph::get_endpoints(size_t e)
 }
 
 // initializes the per-layer contribution to each edge's weight
-void Graph::init_edge_layer_weights(vector<size_t> const &layer_vec)
+void Graph::init_edge_layer_weights()
 {
+  vector<size_t> const& layer_vec = this->layer_memberships();
   size_t layers = *std::max_element(layer_vec.begin(), layer_vec.end());
   this->set_layer_count(layers);
 
