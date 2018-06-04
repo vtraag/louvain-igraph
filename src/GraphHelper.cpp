@@ -94,8 +94,6 @@ Graph::Graph(igraph_t* graph,
   this->init_edge_layer_weights();
 
   // TODO: is node_self_weights necessary here?
-  std::cout << "layer-based Graph constructor called." << std::endl;
-
   this->_correct_self_loops = correct_self_loops;
   this->set_self_weights();
   this->init_admin();
