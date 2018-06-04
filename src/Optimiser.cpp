@@ -102,6 +102,7 @@ double Optimiser::optimise_partition(vector<MutableVertexPartition*> partitions,
   // As long as there remains improvement iterate
   double total_improv = 0.0;
   double improv = 0.0;
+
   do
   {
 
@@ -114,6 +115,7 @@ double Optimiser::optimise_partition(vector<MutableVertexPartition*> partitions,
     #endif
     
     improv = this->move_nodes(collapsed_partitions, layer_weights);
+
     total_improv += improv;
 
     #ifdef DEBUG
@@ -278,6 +280,7 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
   #ifdef DEBUG
     cerr << "double Optimiser::move_nodes_multiplex(vector<MutableVertexPartition*> partitions, vector<double> weights)" << endl;
   #endif
+
   // Number of multiplex layers
   size_t nb_layers = partitions.size();
   if (nb_layers == 0)
@@ -349,7 +352,9 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
         /****************************ALL NEIGH COMMS*****************************/
         for (size_t layer = 0; layer < nb_layers; layer++)
         {
+
           vector<size_t> const& neigh_comm_layer = partitions[layer]->get_neigh_comms(v, IGRAPH_ALL);
+
           comms.insert(neigh_comm_layer.begin(), neigh_comm_layer.end());
         }
       }
@@ -385,7 +390,9 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
           graph = graphs[layer];
           partition = partitions[layer];
           // Make sure to multiply it by the weight per layer
+
           possible_improv += layer_weights[layer]*partition->diff_move(v, comm);
+
         }
         #ifdef DEBUG
           cerr << "Improvement of " << possible_improv << " when move to " << comm << "." << endl;

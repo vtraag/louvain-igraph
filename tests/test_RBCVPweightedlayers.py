@@ -73,8 +73,9 @@ def test_multilayer_louvain():
 
 	print(np.sum(degree_by_layer, axis=0))
 
-	RBCpartobj=louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
-														 layer_vec=mgraph.layer_vec)
+
+
+	RBCpartobj=louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,layer_vec=mgraph.layer_vec.tolist())
 	InterlayerPartobj=louvain.RBConfigurationVertexPartition(interslice,resolution_parameter=0.0)
 
 	opt=louvain.Optimiser()
