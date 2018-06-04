@@ -26,6 +26,11 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
 
 Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObject* py_node_sizes, int check_positive_weight)
 {
+  return create_graph_from_py(py_obj_graph, py_weights, py_node_sizes, NULL, check_positive_weight);
+}
+
+Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObject* py_node_sizes, PyObject* py_layer_vec, int check_positive_weight)
+{
   #ifdef DEBUG
     cerr << "create_graph_from_py" << endl;
   #endif
@@ -50,6 +55,7 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
 
   vector<size_t> node_sizes;
   vector<double> weights;
+  vector<size_t> layer_vec;
   if (py_node_sizes != NULL && py_node_sizes != Py_None)
   {
     #ifdef DEBUG
@@ -118,9 +124,40 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
     }
   }
 
+  if (py_layer_vec != NULL && py_layer_vec != Py_None)
+  {
+    #ifdef DEBUG
+      cerr << "Reading layer membership ." << endl;
+    #endif
+    size_t n = PyList_Size(py_layer_vec);
+    layer_vec.resize(n);
+    for (size_t v = 0; v < n; v++)
+    {
+      PyObject* py_item = PyList_GetItem(py_layer_vec, v);
+      #ifdef IS_PY3K
+      if (PyLong_Check(py_item))
+      #else
+      if (PyInt_Check(py_item) || PyLong_Check(py_item))
+      #endif
+      {
+        layer_vec[v] = PyLong_AsLong(py_item);
+      }
+      else
+      {
+        PyErr_SetString(PyExc_TypeError, "Expected integer value for membership vector.");
+        return NULL;
+      }
+    }
+  }
+
   // TODO: Pass correct_for_self_loops as parameter
   int correct_self_loops = false;
-  if (node_sizes.size() == n)
+
+  if (layer_vec.size() == n)
+  {
+    graph = new Graph(py_graph, weights, node_sizes, layer_vec, correct_self_loops);
+  }
+  else if (node_sizes.size() == n)
   {
     if (weights.size() == m)
       graph = new Graph(py_graph, weights, node_sizes, correct_self_loops);
@@ -612,7 +649,7 @@ extern "C"
 
     static char* kwlist[] = {"graph", "layer_vec", "initial_membership", "weights", "resolution_parameter", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OO|OOd", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O|OOOd", kwlist,
                                      &py_obj_graph, &py_layer_vec,
                                      &py_initial_membership, &py_weights, &resolution_parameter))
       return NULL;
@@ -620,35 +657,9 @@ extern "C"
     try
     {
 
-      Graph* graph = create_graph_from_py(py_obj_graph, py_weights);
+      Graph* graph = create_graph_from_py(py_obj_graph, py_weights, NULL, py_layer_vec, true);
 
       RBConfigurationVertexPartitionWeightedLayers* partition = NULL;
-
-      vector<size_t> layer_vec;
-      #ifdef DEBUG
-        cerr << "Reading layer membership ." << endl;
-      #endif
-      size_t n = PyList_Size(py_layer_vec);
-      layer_vec.resize(n);
-      for (size_t v = 0; v < n; v++)
-      {
-        PyObject* py_item = PyList_GetItem(py_layer_vec, v);
-        #ifdef IS_PY3K
-        if (PyLong_Check(py_item))
-        #else
-        if (PyInt_Check(py_item) || PyLong_Check(py_item))
-        #endif
-        {
-          layer_vec[v] = PyLong_AsLong(py_item);
-        }
-        else
-        {
-          PyErr_SetString(PyExc_TypeError, "Expected integer value for membership vector.");
-          return NULL;
-        }
-      }
-
-      graph->set_layer_membership(layer_vec);
 
       // If necessary create an initial partition
       if (py_initial_membership != NULL && py_initial_membership != Py_None)
@@ -659,7 +670,7 @@ extern "C"
         #ifdef DEBUG
           cerr << "Reading initial membership." << endl;
         #endif
-        n = PyList_Size(py_initial_membership);
+        size_t n = PyList_Size(py_initial_membership);
         initial_membership.resize(n);
         for (size_t v = 0; v < n; v++)
         {

@@ -67,6 +67,43 @@ double KLL(double q, double p)
 Graph::Graph(igraph_t* graph,
   vector<double> const& edge_weights,
   vector<size_t> const& node_sizes,
+  vector<size_t> const& layer_vec, int correct_self_loops)
+{
+  this->_graph = graph;
+  this->_remove_graph = false;
+
+  if (edge_weights.size() == 0)
+    this->set_default_edge_weight();
+  else if (edge_weights.size() != this->ecount())
+    throw Exception("Edge weights vector inconsistent length with the edge count of the graph.");
+  else {
+    this->_edge_weights = edge_weights;
+    this->_is_weighted = true;
+  }
+
+  if (node_sizes.size() == 0)
+    this->set_default_node_size();
+  else if (node_sizes.size() != this->vcount())
+    throw Exception("Node size vector inconsistent length with the vertex count of the graph.");
+  else
+    this->_node_sizes = node_sizes;
+
+  if (layer_vec.size() != this->vcount())
+    throw Exception("Layer membership vector inconsistent length with the vertex count of the graph.");
+  this->_layer_vec = layer_vec;
+  this->init_edge_layer_weights();
+
+  // TODO: is node_self_weights necessary here?
+  std::cout << "layer-based Graph constructor called." << std::endl;
+
+  this->_correct_self_loops = correct_self_loops;
+  this->set_self_weights();
+  this->init_admin();
+}
+
+Graph::Graph(igraph_t* graph,
+  vector<double> const& edge_weights,
+  vector<size_t> const& node_sizes,
   vector<double> const& node_self_weights, int correct_self_loops)
 {
   this->_graph = graph;
@@ -351,7 +388,6 @@ void Graph::set_self_weights()
 
 void Graph::init_admin()
 {
-
   size_t m = this->ecount();
 
   // Determine total weight in the graph.
@@ -542,22 +578,23 @@ pair<size_t, size_t> Graph::get_endpoints(size_t e)
 void Graph::init_edge_layer_weights()
 {
   vector<size_t> const& layer_vec = this->layer_memberships();
-  size_t layers = *std::max_element(layer_vec.begin(), layer_vec.end());
+  size_t layers = *std::max_element(layer_vec.begin(), layer_vec.end())+1;
   this->set_layer_count(layers);
 
   size_t m = this->ecount();
 
+  // TODO: consider reversing indices to (slightly) reduce memory overhead here
   this->_edge_layer_weights.clear();
   this->_edge_layer_weights.resize(m);
-  for (size_t v = 0; v < layers; ++v)
+  for (size_t e = 0; e < m; ++e)
   {
-    this->_edge_layer_weights[v].clear();
-    this->_edge_layer_weights[v].resize(layers);
+    this->_edge_layer_weights[e].clear();
+    this->_edge_layer_weights[e].resize(layers);
   }
 
   igraph_integer_t v, u;
   double w;
-  for (size_t e = 0; e < m; e++)
+  for (size_t e = 0; e < m; ++e)
   {
     w = this->edge_weight(e);
     igraph_edge(this->_graph, e, &v, &u);

@@ -85,6 +85,10 @@ class Graph
     Graph(igraph_t* graph,
       vector<double> const& edge_weights,
       vector<size_t> const& node_sizes,
+      vector<size_t> const& layer_vec, int correct_self_loops);
+    Graph(igraph_t* graph,
+      vector<double> const& edge_weights,
+      vector<size_t> const& node_sizes,
       vector<double> const& node_self_weights, int correct_self_loops);
     Graph(igraph_t* graph,
       vector<double> const& edge_weights,
@@ -207,7 +211,6 @@ class Graph
     }
     inline vector<size_t> const& layer_memberships() { return this->_layer_vec; }
     inline size_t layer_membership(size_t v) { return this->_layer_vec[v]; }
-    inline void set_layer_membership(vector<size_t> const& layer_vec) { this->_layer_vec = layer_vec; }
 
     inline vector<vector<double> > const& degrees_by_layers() { return this->_layer_strength_in; }
     inline vector<double> const& degree_by_layers(size_t v) { return this->_layer_strength_in[v]; }
