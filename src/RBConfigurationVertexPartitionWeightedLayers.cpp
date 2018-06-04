@@ -60,11 +60,17 @@ vector<double> RBConfigurationVertexPartitionWeightedLayers::_compute_total_laye
   vector<double> total_layer_weights;
   total_layer_weights.resize(this->graph->lcount());
 
-  for (size_t v = 0; v < degree_by_layers.size(); ++v)
-    for (size_t l = 0; l < degree_by_layers[v].size(); ++l)
-      total_layer_weights[l] += degree_by_layers[v][l];
+  for (size_t l = 0; l < degree_by_layers.size(); ++l)
+    for (size_t v = 0; v < degree_by_layers[l].size(); ++v)
+      total_layer_weights[l] += degree_by_layers[l][v];
 
-  return total_layer_weights;
+
+    cerr << "total_layer_weight, " << endl;
+    for( size_t i=0; i<total_layer_weights.size(); ++i)
+        {cerr << total_layer_weights[i] << ' ';}
+    cerr<<endl;
+
+    return total_layer_weights;
 }
 
 //flatten the degree by layer matrix by the common
@@ -598,6 +604,8 @@ void RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities_by_la
 
 
 
+
+
 /*****************************************************************************
   Returns the difference in modularity if we move a node to a new community
 *****************************************************************************/
@@ -691,7 +699,7 @@ double RBConfigurationVertexPartitionWeightedLayers::quality(double resolution_p
   #ifdef DEBUG
     cerr << "double ModularityVertexPartition::quality()" << endl;
   #endif
-
+total_layer_weight
   vector<double> m;
   if (this->graph->is_directed())
     m = this->_total_layer_weights;

@@ -627,7 +627,10 @@ void Graph::init_layer_strength() {
       layer_strength_in[u][l] += this->edge_layer_weight(e, l);
       layer_strength_out[v][l] += this->edge_layer_weight(e, l);
     }
+
   }
+
+
 
   this->_layer_strength_in = layer_strength_in;
   this->_layer_strength_out = layer_strength_out;

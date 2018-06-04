@@ -44,6 +44,7 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     vector <double> multiply_vectors_elementwise(vector<double> &v1, vector<double> &v2);
     vector <double> divide_vectors_elementwise(vector<double> &v1, vector<double> &v2);
     vector <double> scalar_multiply(double scalar, vector<double> &v1);
+
     double sum_over_vector(vector<double> &v1);
     double dot_product(vector<double> &v1, vector<double> &v2);
     vector<vector<double> > _condense_degree_by_layer(vector<size_t> const& membership);
