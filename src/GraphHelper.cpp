@@ -919,8 +919,9 @@ Graph* Graph::collapse_graph(MutableVertexPartition* partition)
 
   if (!this->is_singlelayer())
   {
+    G->set_layer_count(this->lcount());
     vector<vector<double> > new_edge_layer_weights = this->collapse_edge_layer_weights(partition);
-    this->set_edge_layer_weights(new_edge_layer_weights);
+    G->set_edge_layer_weights(new_edge_layer_weights);
   }
 
   G->_remove_graph = true;
