@@ -930,6 +930,9 @@ Graph* Graph::collapse_graph(MutableVertexPartition* partition)
     G->set_layer_count(this->lcount());
     vector<vector<double> > new_edge_layer_weights = this->collapse_edge_layer_weights(partition);
     G->set_edge_layer_weights(new_edge_layer_weights);
+
+    // force initialization of degrees_by_layer as well
+    G->init_layer_strength();
   }
 
   G->_remove_graph = true;

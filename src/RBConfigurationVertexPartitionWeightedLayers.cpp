@@ -196,12 +196,7 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
       nb_comms = this->_membership[i] + 1;
   }
 
-  size_t nb_layers=0;
-  for (size_t i = 0; i < this->_layer_vec.size() ; i++)
-  {
-    if (this->_layer_vec[i] + 1 > nb_layers)
-      nb_layers = this->_layer_vec[i] + 1;
-  }
+  size_t nb_layers=this->graph->lcount();
   this->_nb_layers=nb_layers;
   // Reset administration
   this->community.clear();
