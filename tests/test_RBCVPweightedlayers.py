@@ -35,7 +35,7 @@ def test_multilayer_louvain():
 	prob_mat = np.identity(nblocks) * pin + (np.ones((nblocks, nblocks)) - np.identity(nblocks)) * pout
 
 	# sbm=modbp.RandomSBMGraph(n,comm_prob_mat=prob_mat,use_gcc=True)
-	# layer_vec = [0 for _ in range(sbm.graph.vcount())]+[1]  # add extra node to use
+	# layer_vec = [0 for _ in range(sbm.graph.vcount())]  # add extra node to use
 	# intraslice, interslice = champ.create_multilayer_igraph_from_edgelist(intralayer_edges=sbm.get_edgelist(),										   interlayer_edges=[],layer_vec=layer_vec)
 	#
 	# louvain.set_rng_seed(0)
@@ -62,8 +62,6 @@ def test_multilayer_louvain():
 
 
 
-
-
 	alldegrees=intraslice.degree()
 	layers=np.unique(mgraph.layer_vec)
 	degree_by_layer=np.zeros((len(alldegrees),len(layers)))
@@ -73,8 +71,9 @@ def test_multilayer_louvain():
 
 	print(np.sum(degree_by_layer, axis=0))
 
-	RBCpartobj=louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
-														 layer_vec=mgraph.layer_vec)
+
+
+	RBCpartobj=louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,layer_vec=mgraph.layer_vec.tolist())
 	InterlayerPartobj=louvain.RBConfigurationVertexPartition(interslice,resolution_parameter=0.0)
 
 	opt=louvain.Optimiser()
