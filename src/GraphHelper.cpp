@@ -626,6 +626,10 @@ void Graph::init_layer_strength() {
     for (size_t l = 0; l < layers; ++l) {
       layer_strength_in[u][l] += this->edge_layer_weight(e, l);
       layer_strength_out[v][l] += this->edge_layer_weight(e, l);
+      if (! this->is_directed() ){ //update in and out for both tail and head
+        layer_strength_out[u][l] += this->edge_layer_weight(e, l);
+        layer_strength_in[v][l] += this->edge_layer_weight(e, l);
+      }
     }
 
   }

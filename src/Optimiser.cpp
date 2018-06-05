@@ -102,6 +102,7 @@ double Optimiser::optimise_partition(vector<MutableVertexPartition*> partitions,
   // As long as there remains improvement iterate
   double total_improv = 0.0;
   double improv = 0.0;
+
   do
   {
 
@@ -114,6 +115,7 @@ double Optimiser::optimise_partition(vector<MutableVertexPartition*> partitions,
     #endif
     
     improv = this->move_nodes(collapsed_partitions, layer_weights);
+
     total_improv += improv;
 
     #ifdef DEBUG
@@ -278,6 +280,7 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
   #ifdef DEBUG
     cerr << "double Optimiser::move_nodes_multiplex(vector<MutableVertexPartition*> partitions, vector<double> weights)" << endl;
   #endif
+
   // Number of multiplex layers
   size_t nb_layers = partitions.size();
   if (nb_layers == 0)
@@ -349,7 +352,9 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
         /****************************ALL NEIGH COMMS*****************************/
         for (size_t layer = 0; layer < nb_layers; layer++)
         {
+
           vector<size_t> const& neigh_comm_layer = partitions[layer]->get_neigh_comms(v, IGRAPH_ALL);
+
           comms.insert(neigh_comm_layer.begin(), neigh_comm_layer.end());
         }
       }
@@ -385,7 +390,16 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
           graph = graphs[layer];
           partition = partitions[layer];
           // Make sure to multiply it by the weight per layer
-          possible_improv += layer_weights[layer]*partition->diff_move(v, comm);
+
+          try {
+                possible_improv += layer_weights[layer]*partition->diff_move(v, comm);
+             }
+             catch (std::exception e)
+            {
+            cerr<<"exception in diff_move"<<endl;
+            PyErr_SetString(PyExc_ValueError, e.what());
+            return NULL;
+            }
         }
         #ifdef DEBUG
           cerr << "Improvement of " << possible_improv << " when move to " << comm << "." << endl;
@@ -400,14 +414,18 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
 
       // Check if we should move to an empty community
       if (consider_empty_community)
+//
       {
+//      cerr<< "considering empty communities" << endl;
         for (size_t layer = 0; layer < nb_layers; layer++)
         {
           graph = graphs[layer];
           partition = partitions[layer];
           if ( partition->get_community(v_comm).size() > 1 )  // We should not move a node when it is already in its own empty community (this may otherwise create more empty communities than nodes)
           {
+            try{
             size_t comm = partition->get_empty_community();
+
             #ifdef DEBUG
               cerr << "Checking empty community (" << comm << ") for partition " << partition << endl;
             #endif
@@ -416,13 +434,33 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
               // If the empty community has just been added, we need to make sure
               // that is has also been added to the other layers
               for (size_t layer_2 = 0; layer_2 < nb_layers; layer_2++)
+                try{
                 partitions[layer_2]->add_empty_community();
+                }
+
+            catch (std::exception e) {
+
+                cerr<<"problem with adding empty community"<< endl;
+                PyErr_SetString(PyExc_ValueError, e.what());
+                return NULL;
+//                throw e;
+                }
             }
+
 
             double possible_improv = 0.0;
             for (size_t layer_2 = 0; layer_2 < nb_layers; layer_2++)
             {
+              try{
               possible_improv += layer_weights[layer_2]*partitions[layer_2]->diff_move(v, comm);
+              }
+              catch (std::exception e) {
+
+                cerr<<"probelm with diff_move in empty com"<< endl;
+//                throw e;
+                PyErr_SetString(PyExc_ValueError, e.what());
+                return NULL;
+                }
             }
             #ifdef DEBUG
               cerr << "Improvement to empty community: " << possible_improv << ", maximum improvement: " << max_improv << endl;
@@ -432,9 +470,19 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
               max_improv = possible_improv;
               max_comm = comm;
             }
+             }
+            catch (std::exception e) {
+
+                cerr<<"problem with get_empty_community"<< endl;
+//                throw e;
+                PyErr_SetString(PyExc_ValueError, e.what());
+                return NULL;
+            }
           }
         }
+
       }
+
 
       // If we actually plan to move the node
       if (max_comm != v_comm)
@@ -442,23 +490,27 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
         // Keep track of improvement
         improv += max_improv;
 
-        #ifdef DEBUG
+        cerr <<"max_improv: "<< max_improv << endl;
+        cerr <<"num_communities 0: "<< partitions[0]->nb_communities() << endl;
+        cerr <<"empty coms : "<< partitions[0]->nb_empty_communities() << endl;
+
+//        #ifdef DEBUG
           // If we are debugging, calculate quality function
           double q_improv = 0;
-        #endif
+//        #endif
 
         for (size_t layer = 0; layer < nb_layers; layer++)
         {
           MutableVertexPartition* partition = partitions[layer];
 
-          #ifdef DEBUG
+//          #ifdef DEBUG
             // If we are debugging, calculate quality function
             double q1 = partition->quality();
-          #endif
+//          #endif
 
           // Actually move the node
           partition->move_node(v, max_comm);
-          #ifdef DEBUG
+//          #ifdef DEBUG
             // If we are debugging, calculate quality function
             // and report difference
             double q2 = partition->quality();
@@ -468,32 +520,38 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
             << " from " << v_comm << " to " << max_comm << " for layer " << layer
             << " (diff_move=" << max_improv
             << ", q2 - q1=" << q_delta << ")" << endl;
-          #endif
+//          #endif
         }
-        #ifdef DEBUG
+//        #ifdef DEBUG
           if (fabs(q_improv - max_improv) > 1e-16)
           {
             cerr << "ERROR: Inconsistency while moving nodes, improvement as measured by quality function did not equal the improvement measured by the diff_move function." << endl
                  << " (diff_move=" << max_improv
                  << ", q2 - q1=" << q_improv << ")" << endl;
           }
-        #endif
+//        #endif
 
         // Keep track of number of moves
         nb_moves += 1;
+//        cerr<< 'inner loop' << endl;
       }
+//      cerr<< "after moving all nodes" << endl;
     }
     total_improv += improv;
+//    cerr<< "outer" << endl;
   }
+//  cerr<< "after outer" << endl;
+
 
   partitions[0]->renumber_communities();
   vector<size_t> const& membership = partitions[0]->membership();
   for (size_t layer = 1; layer < nb_layers; layer++)
   {
     partitions[layer]->renumber_communities(membership);
-    #ifdef DEBUG
+//    #ifdef DEBUG
       cerr << "Renumbered communities for layer " << layer << " for " << partitions[layer]->nb_communities() << " communities." << endl;
-    #endif DEBUG
+//    #endif DEBUG
   }
+
   return total_improv;
 }

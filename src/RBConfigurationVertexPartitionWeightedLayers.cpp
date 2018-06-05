@@ -53,8 +53,7 @@ RBConfigurationVertexPartitionWeightedLayers* RBConfigurationVertexPartitionWeig
   return new RBConfigurationVertexPartitionWeightedLayers(graph, membership, this->resolution_parameter);
 }
 
-//computes the 2 times the sum of all the edges within each layer
-//used to compute the multilayer modularity
+
 vector<double> RBConfigurationVertexPartitionWeightedLayers::_compute_total_layer_weights(vector<vector<double> > const& degree_by_layers)
 {
   vector<double> total_layer_weights;
@@ -69,7 +68,10 @@ vector<double> RBConfigurationVertexPartitionWeightedLayers::_compute_total_laye
         {cerr << total_layer_weights[i] << ' ';}
     cerr<<endl;
 
-
+    if (! this->graph->is_directed())
+        {
+        total_layer_weights=this->scalar_multiply(1/2.0,total_layer_weights); //for undirected divide by 2
+        }
     return total_layer_weights;
 }
 
@@ -248,7 +250,7 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
       cerr << "\t" << "Add (" << v << ", " << u << ") weight " << w << " to from_comm " << v_comm <<  "." << endl;
     #endif
     // Add weight to the incoming weight of community of u
-    this->_total_weight_from_comm_by_layer[u_comm] = this->add_vectors(_total_weight_from_comm_by_layer[u_comm],w_layers);
+    this->_total_weight_to_comm_by_layer[u_comm] = this->add_vectors(_total_weight_to_comm_by_layer[u_comm],w_layers);
     #ifdef DEBUG
       cerr << "\t" << "Add (" << v << ", " << u << ") weight " << w << " to to_comm " << u_comm << "." << endl;
     #endif
@@ -261,7 +263,7 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
       #ifdef DEBUG
         cerr << "\t" << "Add (" << u << ", " << v << ") weight " << w << " to to_comm " << v_comm << "." << endl;
       #endif
-      this->_total_weight_from_comm_by_layer[v_comm] = this->add_vectors(_total_weight_from_comm_by_layer[v_comm],w_layers);
+      this->_total_weight_to_comm_by_layer[v_comm] = this->add_vectors(_total_weight_to_comm_by_layer[v_comm],w_layers);
     }
     // If it is an edge within a community
     if (v_comm == u_comm)
@@ -689,23 +691,64 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
     vector<double> w_from_new = this->weight_from_comm_by_layer(v, new_comm);
 
     vector<double> k_out = this->graph->layer_strength(v,IGRAPH_OUT);
+
     vector<double> k_in = this->graph->layer_strength(v,IGRAPH_IN);
-
     double self_weight = this->graph->node_self_weight(v);
-
     vector<double> K_out_old = this->total_weight_from_comm_by_layer(old_comm);
-
     vector<double> K_in_old = this->total_weight_to_comm_by_layer(old_comm);
 
     vector<double> temp = this->total_weight_from_comm_by_layer(new_comm);
-
     vector<double> K_out_new = this->add_vectors(temp,k_out);
-
     temp = this->total_weight_to_comm_by_layer(new_comm);
-
     vector<double> K_in_new = this->add_vectors(temp, k_in);
+    #ifdef DEBUG
+        cerr << "w_to_old, ";
+        for( size_t i=0; i<w_to_old.size(); ++i)
+            {cerr << w_to_old[i] << ' ';}
+        cerr<<endl;
+        cerr << "w_from_old, " ;
+        for( size_t i=0; i<w_from_old.size(); ++i)
+            {cerr << w_from_old[i] << ' ';}
+        cerr<<endl;
+        cerr << "w_to_new, ";
+        for( size_t i=0; i<w_to_new.size(); ++i)
+            {cerr << w_to_new[i] << ' ';}
+        cerr<<endl;
+        cerr << "w_from_new, " ;
+        for( size_t i=0; i<w_from_new.size(); ++i)
+            {cerr << w_from_new[i] << ' ';}
+        cerr<<endl;
+        cerr << "k_out, " ;
+        for( size_t i=0; i<k_out.size(); ++i)
+            {cerr << k_out[i] << ' ';}
+        cerr<<endl;
+        cerr << "k_in, " ;
+        for( size_t i=0; i<k_in.size(); ++i)
+            {cerr << k_in[i] << ' ';}
+        cerr<<endl;
+        cerr << "self_weight, " << self_weight<< endl;
 
-
+        cerr << "K_in_old, ";
+        for( size_t i=0; i<K_in_old.size(); ++i)
+            {cerr << K_in_old[i] << ' ';}
+        cerr<<endl;
+        cerr << "K_in_new, " ;
+        for( size_t i=0; i<K_in_new.size(); ++i)
+            {cerr << K_in_new[i] << ' ';}
+        cerr<<endl;
+        cerr << "K_out_old, ";
+        for( size_t i=0; i<K_out_old.size(); ++i)
+            {cerr << K_out_old[i] << ' ';}
+        cerr<<endl;
+        cerr << "K_out_new, ";
+        for( size_t i=0; i<K_out_new.size(); ++i)
+            {cerr << K_out_new[i] << ' ';}
+        cerr<<endl;
+        cerr << "total_weight, " ;
+        for( size_t i=0; i<total_weight.size(); ++i)
+            {cerr << total_weight[i] << ' ';}
+        cerr<<endl;
+    #endif
     //vectorized versions
     double diff_old=this->sum_over_vector(w_to_old);
     temp=this->multiply_vectors_elementwise(k_out,K_in_old);
@@ -726,6 +769,8 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
     temp = this->divide_vectors_elementwise(temp,total_weight);
     diff_new -= (this->resolution_parameter*this->sum_over_vector(temp));
 
+//    cerr << "diff_old, " << diff_old << endl;
+//    cerr << "diff_new, " << diff_new << endl;
 
 //    double diff_old = (w_to_old - this->resolution_parameter*k_out*K_in_old/total_weight) + \
 //               (w_from_old - this->resolution_parameter*k_in*K_out_old/total_weight);

@@ -291,7 +291,14 @@ size_t MutableVertexPartition::get_empty_community()
   {
     // If there was no empty community yet,
     // we will create a new one.
+    try{
     add_empty_community();
+    }
+    catch (std::exception e)
+    {
+       cerr<<'problem inside adding empty community'<<endl;
+       throw e;
+    }
   }
 
   return this->_empty_communities.back();
