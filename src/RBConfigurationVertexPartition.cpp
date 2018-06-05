@@ -1,5 +1,4 @@
 #include "RBConfigurationVertexPartition.h"
-
 RBConfigurationVertexPartition::RBConfigurationVertexPartition(Graph* graph,
       vector<size_t> const& membership, double resolution_parameter) :
         LinearResolutionParameterVertexPartition(graph,
@@ -157,5 +156,5 @@ double RBConfigurationVertexPartition::quality(double resolution_parameter)
     cerr << "exit double RBConfigurationVertexPartition::quality()" << endl;
     cerr << "return " << q << endl << endl;
   #endif
-  return q/m;
+  return q;
 }

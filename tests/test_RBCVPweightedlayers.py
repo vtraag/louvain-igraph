@@ -33,7 +33,8 @@ def test_diff_move():
 
 	sbm = modbp.RandomSBMGraph(n, comm_prob_mat=prob_mat, use_gcc=False)
 	layer_vec = [0 for _ in range(sbm.graph.vcount())]  # add extra node to use
-	memvec=sbm.block
+	# memvec=sbm.block
+	memvec = range(sbm.graph.vcount())
 	intraslice, interslice = champ.create_multilayer_igraph_from_edgelist(intralayer_edges=sbm.get_edgelist(),
 																		  interlayer_edges=[], layer_vec=layer_vec)
 
@@ -41,21 +42,29 @@ def test_diff_move():
 	# 															   layer_vec=layer_vec,initial_membership=memvec)
 	# partobj2 = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=1.0,
 	# 															   initial_membership=memvec)
-	# # partobj.diff_move(0,1)
-	# # partobj2.diff_move(0,1)
-	# #
-	louvain.set_rng_seed(0)
+	# print(partobj.diff_move(5,15))
+	# old_qual=partobj.quality()
+	# partobj.move_node(5,15)
+	# print(partobj.quality()-old_qual)
+	# print(partobj.quality())
+	# print(partobj2.diff_move(5,15))
+	# print(partobj.quality())
+	# print(partobj2.quality())
+	# louvain.set_rng_seed(0)
 	partobj = louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
 																   layer_vec=layer_vec)
+	# partobj = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=1.0)
 	opt = louvain.Optimiser()
 	opt.optimise_partition(partition=partobj)
 	print(partobj.quality(resolution_parameter=1.0))
+	#
+	# louvain.set_rng_seed(0)
+	# partobj2 = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=1.0)
+	# opt = louvain.Optimiser()
+	# opt.optimise_partition(partition=partobj2)
+	# print(partobj2.quality(resolution_parameter=1.0))
 
-	louvain.set_rng_seed(0)
-	partobj2 = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=1.0)
-	opt = louvain.Optimiser()
-	opt.optimise_partition(partition=partobj2)
-	print(partobj2.quality(resolution_parameter=1.0))
+
 
 
 def test_multilayer_louvain():
@@ -100,8 +109,7 @@ def test_multilayer_louvain():
 
 
 
-	RBCpartobj=louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
-																	layer_vec=mgraph.layer_vec.tolist())
+	RBCpartobj=louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,layer_vec=mgraph.layer_vec.tolist())
 	InterlayerPartobj=louvain.RBConfigurationVertexPartition(interslice,resolution_parameter=0.0)
 
 	opt=louvain.Optimiser()
@@ -128,7 +136,7 @@ def test_multilayer_louvain():
 	# plt.show()
 
 def main():
-	test_multilayer_louvain()
+	test_diff_move()
 
 if __name__=='__main__':
 	sys.exit(main())

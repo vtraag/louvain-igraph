@@ -490,27 +490,27 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
         // Keep track of improvement
         improv += max_improv;
 
-        cerr <<"max_improv: "<< max_improv << endl;
-        cerr <<"num_communities 0: "<< partitions[0]->nb_communities() << endl;
-        cerr <<"empty coms : "<< partitions[0]->nb_empty_communities() << endl;
+//        cerr <<"max_improv: "<< max_improv << endl;
+//        cerr <<"num_communities 0: "<< partitions[0]->nb_communities() << endl;
+//        cerr <<"empty coms : "<< partitions[0]->nb_empty_communities() << endl;
 
-//        #ifdef DEBUG
+        #ifdef DEBUG
           // If we are debugging, calculate quality function
           double q_improv = 0;
-//        #endif
+        #endif
 
         for (size_t layer = 0; layer < nb_layers; layer++)
         {
           MutableVertexPartition* partition = partitions[layer];
 
-//          #ifdef DEBUG
+          #ifdef DEBUG
             // If we are debugging, calculate quality function
             double q1 = partition->quality();
-//          #endif
+          #endif
 
           // Actually move the node
           partition->move_node(v, max_comm);
-//          #ifdef DEBUG
+          #ifdef DEBUG
             // If we are debugging, calculate quality function
             // and report difference
             double q2 = partition->quality();
@@ -520,16 +520,17 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
             << " from " << v_comm << " to " << max_comm << " for layer " << layer
             << " (diff_move=" << max_improv
             << ", q2 - q1=" << q_delta << ")" << endl;
-//          #endif
+          #endif
         }
-//        #ifdef DEBUG
+        #ifdef DEBUG
           if (fabs(q_improv - max_improv) > 1e-16)
           {
             cerr << "ERROR: Inconsistency while moving nodes, improvement as measured by quality function did not equal the improvement measured by the diff_move function." << endl
                  << " (diff_move=" << max_improv
+                 << ", difference = "<< fabs(q_improv-max_improv)
                  << ", q2 - q1=" << q_improv << ")" << endl;
           }
-//        #endif
+        #endif
 
         // Keep track of number of moves
         nb_moves += 1;

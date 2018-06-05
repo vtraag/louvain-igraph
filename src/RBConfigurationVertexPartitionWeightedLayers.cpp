@@ -357,13 +357,13 @@ void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new
 
   if (this->community[old_comm]->size() == 0)
   {
-//    #ifdef DEBUG
+    #ifdef DEBUG
       cerr << "Adding community " << old_comm << " to empty communities." << endl;
-//    #endif
+    #endif
     this->_empty_communities.push_back(old_comm);
-//    #ifdef DEBUG
+    #ifdef DEBUG
       cerr << "Added community " << old_comm << " to empty communities." << endl;
-//    #endif
+    #endif
   }
 
   if (this->community[new_comm]->size() == 0)
@@ -820,7 +820,7 @@ double RBConfigurationVertexPartitionWeightedLayers::quality(double resolution_p
   double mod=0.0;
   vector <double> temp;
   //divisor of null model part
-  vector <double> mdiv = this->scalar_multiply(this->graph->is_directed() ? 1.0 : 4.0,m);
+  vector <double> mdiv = this->scalar_multiply(this->graph->is_directed() ? 1.0 : 4.0,this->_total_layer_weights);
   for (size_t c = 0; c < this->nb_communities(); c++)
   {
         vector <double> w = this->total_weight_in_comm_by_layer(c);
@@ -845,5 +845,6 @@ double RBConfigurationVertexPartitionWeightedLayers::quality(double resolution_p
     cerr << "exit double RBConfigurationVertexPartitionWeightedLayers::quality()" << endl;
     cerr << "return " << q << endl << endl;
   #endif
-  return q/this->sum_over_vector(m); //this appears to be missing from original RBC
+  return q;
+//  return q/this->sum_over_vector(m); //this appears to be missing from original RBC
 }
