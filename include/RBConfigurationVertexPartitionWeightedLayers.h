@@ -2,7 +2,7 @@
 #define RBConfigurationVertexPartitionWeightedLayers_H
 
 #include "LinearResolutionParameterVertexPartition.h"
-
+#include <Python.h>
 class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionParameterVertexPartition
 {
   public:
@@ -21,6 +21,8 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     virtual double diff_move(size_t v, size_t new_comm);
     virtual double quality(double resolution_parameter);
     virtual void move_node(size_t v,size_t new_comm); //override this to change how calculations are stored
+    size_t get_empty_community();
+    size_t add_empty_community();
 
     vector <double> weight_to_comm_by_layer(size_t v, size_t comm);
     vector <double> weight_from_comm_by_layer(size_t v, size_t comm);
@@ -34,11 +36,18 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
 
   protected:
 
+//    // Keep track of each community (i.e. which community contains which nodes)
+//    vector< set<size_t>* > community;
+    // Community size
+
+//    vector< size_t > _csize;
+
     virtual void init_admin();
 
   private:
     //methods
     void _clear_resize(vector<vector<double > > &input_vec, size_t N, size_t M);
+    void _zero_vector(vector<double> &input_vec);
     vector <double> add_vectors(vector<double> &v1, vector<double> &v2);
     vector <double> subtract_vectors(vector<double> &v1, vector<double> &v2);
     vector <double> multiply_vectors_elementwise(vector<double> &v1, vector<double> &v2);
@@ -69,7 +78,7 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     vector <double> _total_weight_in_all_comms_by_layer;
     size_t _total_possible_edges_in_all_comms;
 
-    vector<size_t> _empty_communities;
+//    vector<size_t> _empty_communities;
 
 
 

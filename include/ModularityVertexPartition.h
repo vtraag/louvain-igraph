@@ -1,6 +1,7 @@
 #ifndef MODULARITYVERTEXPARTITION_H
 #define MODULARITYVERTEXPARTITION_H
 
+
 #include <MutableVertexPartition.h>
 
 class ModularityVertexPartition : public MutableVertexPartition

@@ -59,7 +59,7 @@ class MutableVertexPartition
     size_t csize(size_t comm);
     set<size_t> const& get_community(size_t comm);
     size_t nb_communities();
-
+    inline size_t nb_empty_communities() {return this->_empty_communities.size();};
     virtual void move_node(size_t v,size_t new_comm);
     virtual double diff_move(size_t v, size_t new_comm)
     {
@@ -113,6 +113,8 @@ class MutableVertexPartition
     vector< set<size_t>* > community;
     // Community size
     vector< size_t > _csize;
+    vector<size_t> _empty_communities;
+
 
     double weight_vertex_tofrom_comm(size_t v, size_t comm, igraph_neimode_t mode);
 
@@ -130,7 +132,6 @@ class MutableVertexPartition
     double _total_weight_in_all_comms;
     size_t _total_possible_edges_in_all_comms;
 
-    vector<size_t> _empty_communities;
 
     void cache_neigh_communities(size_t v, igraph_neimode_t mode);
 

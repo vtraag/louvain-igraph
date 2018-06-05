@@ -35,7 +35,7 @@ def test_multilayer_louvain():
 	prob_mat = np.identity(nblocks) * pin + (np.ones((nblocks, nblocks)) - np.identity(nblocks)) * pout
 
 	# sbm=modbp.RandomSBMGraph(n,comm_prob_mat=prob_mat,use_gcc=True)
-	# layer_vec = [0 for _ in range(sbm.graph.vcount())]+[1]  # add extra node to use
+	# layer_vec = [0 for _ in range(sbm.graph.vcount())]  # add extra node to use
 	# intraslice, interslice = champ.create_multilayer_igraph_from_edgelist(intralayer_edges=sbm.get_edgelist(),										   interlayer_edges=[],layer_vec=layer_vec)
 	#
 	# louvain.set_rng_seed(0)
@@ -58,8 +58,6 @@ def test_multilayer_louvain():
 								   layer_vec=ml_sbm.layer_vec,
 								   comm_vec=ml_sbm.get_all_layers_block())
 	intraslice, interslice = champ.create_multilayer_igraph_from_edgelist(intralayer_edges=mgraph.intralayer_edges,										   interlayer_edges=mgraph.interlayer_edges,layer_vec=mgraph.layer_vec)
-
-
 
 
 

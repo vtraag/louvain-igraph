@@ -64,10 +64,10 @@ vector<double> RBConfigurationVertexPartitionWeightedLayers::_compute_total_laye
     for (size_t l = 0; l < degree_by_layers[v].size(); ++l)
       total_layer_weights[l] += degree_by_layers[v][l];
 
-//    cerr << "total_layer_weight, " << endl;
-//    for( size_t i=0; i<total_layer_weights.size(); ++i)
-//        {cerr << total_layer_weights[i] << ' ';}
-//    cerr<<endl;
+    cerr << "total_layer_weight, " << endl;
+    for( size_t i=0; i<total_layer_weights.size(); ++i)
+        {cerr << total_layer_weights[i] << ' ';}
+    cerr<<endl;
 
 
     return total_layer_weights;
@@ -101,6 +101,15 @@ vector<vector<double> > RBConfigurationVertexPartitionWeightedLayers::_condense_
     }
   }
   return condensed_degrees;
+}
+
+void RBConfigurationVertexPartitionWeightedLayers::_zero_vector(vector<double> &input_vec){
+    for (size_t i=0;i<input_vec.size();i++)
+    {
+        input_vec[i]=0.0;
+
+    }
+
 }
 
 void RBConfigurationVertexPartitionWeightedLayers::_clear_resize(vector<vector<double> > &input_vec, size_t N, size_t M) {
@@ -342,15 +351,16 @@ void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new
   // We have to use the size of the set of nodes rather than the csize
   // to account for nodes that have a zero size (i.e. community may not be empty, but
   // may have zero size).
+
   if (this->community[old_comm]->size() == 0)
   {
-    #ifdef DEBUG
+//    #ifdef DEBUG
       cerr << "Adding community " << old_comm << " to empty communities." << endl;
-    #endif
+//    #endif
     this->_empty_communities.push_back(old_comm);
-    #ifdef DEBUG
+//    #ifdef DEBUG
       cerr << "Added community " << old_comm << " to empty communities." << endl;
-    #endif
+//    #endif
   }
 
   if (this->community[new_comm]->size() == 0)
@@ -603,6 +613,53 @@ void RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities_by_la
 
 
 
+size_t RBConfigurationVertexPartitionWeightedLayers::get_empty_community()
+{
+  if (this->_empty_communities.empty())
+  {
+    // If there was no empty community yet,
+    // we will create a new one.
+    try{
+    add_empty_community();
+    }
+    catch (std::exception e)
+    {
+       cerr<<"problem inside adding empty community"<<endl;
+       PyErr_SetString(PyExc_ValueError, e.what());
+       return NULL;
+//       throw e;
+    }
+  }
+  return this->_empty_communities.back();
+ }
+
+ size_t RBConfigurationVertexPartitionWeightedLayers::add_empty_community()
+{
+  this->community.push_back(new set<size_t>());
+  size_t nb_comms = this->community.size();
+  if (nb_comms > this->graph->vcount())
+    throw Exception("There cannot be more communities than nodes, so there must already be an empty community.");
+  size_t new_comm = nb_comms - 1;
+  this->_csize.resize(nb_comms);                  this->_csize[new_comm] = 0;
+  try{
+  vector<double> temp (this->nb_layers(),0.0);
+  this->_total_weight_in_comm_by_layer.resize(nb_comms);   this->_total_weight_in_comm_by_layer[new_comm] = temp;
+  temp=vector<double>(this->nb_layers(),0.0);
+  this->_total_weight_from_comm_by_layer.resize(nb_comms); this->_total_weight_from_comm_by_layer[new_comm] = temp;
+  temp=vector<double>(this->nb_layers(),0.0);
+  this->_total_weight_to_comm_by_layer.resize(nb_comms);   this->_total_weight_to_comm_by_layer[new_comm] = temp;
+  }
+      catch (std::exception e)
+    {
+       cerr<<"problem resizing communities"<<endl;
+       PyErr_SetString(PyExc_ValueError, e.what());
+       return NULL;
+//       throw e;
+    }
+  this->_empty_communities.push_back(new_comm);
+  return new_comm;
+}
+
 
 
 
@@ -651,8 +708,6 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
 
     //vectorized versions
     double diff_old=this->sum_over_vector(w_to_old);
-
-
     temp=this->multiply_vectors_elementwise(k_out,K_in_old);
     temp=this->divide_vectors_elementwise(temp,total_weight);
     diff_old-=this->resolution_parameter*this->sum_over_vector(temp);
@@ -685,6 +740,7 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
     cerr << "exit RBConfigurationVertexPartitionWeightedLayers::diff_move(" << v << ", " << new_comm << ")" << endl;
     cerr << "return " << diff << endl << endl;
   #endif
+
   return diff;
 }
 
