@@ -203,6 +203,8 @@ class Graph
 
     inline bool is_singlelayer() { return this->_layer_count == 0; }
     inline void set_layer_count(size_t n) { this->_layer_count = n; };
+
+    inline vector<vector<double> > get_all_edge_layer_weights() { return this->_edge_layer_weights;};
     inline vector<double> const& edge_layer_weights(size_t e) { return this->_edge_layer_weights[e]; };
     inline double edge_layer_weight(size_t e, size_t l) { return this->_edge_layer_weights[e][l]; };
     inline void set_edge_layer_weights(vector<vector<double> > &edge_layer_weights)

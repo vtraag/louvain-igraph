@@ -810,7 +810,7 @@ class RBConfigurationVertexPartitionWeightedLayers(LinearResolutionParameterVert
 
    """
 
-  def __init__(self, graph, layer_vec, initial_membership=None, weights=None, resolution_parameter=1.0):
+  def __init__(self, graph, layer_vec=None, initial_membership=None, weights=None, resolution_parameter=1.0):
     """
     Parameters
     ----------
@@ -838,6 +838,7 @@ class RBConfigurationVertexPartitionWeightedLayers(LinearResolutionParameterVert
     if initial_membership is not None:
       initial_membership = list(initial_membership)
 
+
     super(RBConfigurationVertexPartitionWeightedLayers, self).__init__(graph, initial_membership)
 
     pygraph_t = _get_py_capsule(graph)
@@ -848,13 +849,28 @@ class RBConfigurationVertexPartitionWeightedLayers(LinearResolutionParameterVert
       else:
         # Make sure it is a list
         weights = list(weights)
-
-    layer_vec = list(layer_vec)  # ensure that it is a list
+    if layer_vec is not  None:
+      layer_vec = list(layer_vec)  # ensure that it is a list
+    else:
+      layer_vec = [0 for _ in range(graph.vcount())] #default is to assume single layer
 
     self._partition = _c_louvain._new_RBConfigurationVertexPartitionWeightedLayers(pygraph_t, layer_vec,
                                                                                    initial_membership, weights,
                                                                                    resolution_parameter)
     self._update_internal_membership()
+
+    @classmethod #we override this to correctly construct the class from aggregated version
+    def _FromCPartition(cls, partition):
+      n, edges, weights, node_sizes,edge_layer_weights = _c_louvain._MutableVertexPartition_get_py_igraph(partition,True)
+      graph = _ig.Graph(n=n,
+                        edges=edges,
+                        edge_attrs={'weight': weights},
+                        vertex_attrs={'node_size': node_sizes})
+
+      new_partition = cls(graph)
+      new_partition._partition = partition
+      new_partition._update_internal_membership()
+      return new_partition
 
 class CPMVertexPartition(LinearResolutionParameterVertexPartition):
   """ Implements CPM.

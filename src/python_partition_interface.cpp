@@ -182,6 +182,39 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
   return graph;
 }
 
+
+void _RBConfigurationVertexPartitionWeightedLayers_set_edge_layer_weights(PyObject* py_partition, PyObject* py_weights_by_layer) {
+ MutableVertexPartition* partition = decapsule_MutableVertexPartition(py_partition);
+ Graph* graph = partition->get_graph();
+
+ vector<vector<double> > edge_weights_by_layer;
+ size_t m = PyList_Size(py_weights_by_layer);
+
+ edge_weights_by_layer.resize(m);
+ for (size_t e = 0; e < m; e++) {
+   PyObject* py_item = PyList_GetItem(py_weights_by_layer, e);
+   size_t layers = PyList_Size(py_item);
+   edge_weights_by_layer[e].resize(layers);
+   for (size_t l = 0; l < layers; l++) {
+     PyObject* py_item_item = PyList_GetItem(py_item, l);
+     #ifdef IS_PY3K
+     if (PyFloat_Check(py_item_item) || PyLong_Check(py_item_item))
+     #else
+     if (PyFloat_Check(py_item_item) || PyInt_Check(py_item_item) || PyLong_Check(py_item_item))
+     #endif
+     {
+       edge_weights_by_layer[e][l] = PyFloat_AsDouble(py_item_item);
+     } else {
+       PyErr_SetString(PyExc_TypeError, "Expected float value for edge weight vector.");
+
+     }
+   }
+ }
+
+ graph->set_edge_layer_weights(edge_weights_by_layer);
+ graph->init_layer_strength();
+}
+
 PyObject* capsule_MutableVertexPartition(MutableVertexPartition* partition)
 {
   PyObject* py_partition = PyCapsule_New(partition, "louvain.VertexPartition.MutableVertexPartition", del_MutableVertexPartition);
@@ -717,14 +750,15 @@ extern "C"
   PyObject* _MutableVertexPartition_get_py_igraph(PyObject *self, PyObject *args, PyObject *keywds)
   {
     PyObject* py_partition = NULL;
+    PyObject* py_return_edge_layer_weights = Py_False;
 
-    static char* kwlist[] = {"partition", NULL};
+    static char* kwlist[] = {"partition","edgelayers", NULL};
 
     #ifdef DEBUG
       cerr << "Parsing arguments..." << endl;
     #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O|O", kwlist,
                                      &py_partition))
         return NULL;
 
@@ -770,6 +804,11 @@ extern "C"
         PyObject* item = PyInt_FromSize_t(graph->node_size(v));
       #endif
       PyList_SetItem(node_sizes, v, item);
+    }
+
+    if (PyObject_IsTrue(py_return_edge_layer_weights)){
+        vector <vector<double > > edge_layer_weights=graph->get_all_edge_layer_weights();
+        return Py_BuildValue("lOOOO", n, edges, weights, node_sizes,edge_layer_weights);
     }
 
     return Py_BuildValue("lOOO", n, edges, weights, node_sizes);

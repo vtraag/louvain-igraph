@@ -79,7 +79,7 @@ extern "C"
   PyObject* _ResolutionParameterVertexPartition_get_resolution(PyObject *self, PyObject *args, PyObject *keywds);
   PyObject* _ResolutionParameterVertexPartition_set_resolution(PyObject *self, PyObject *args, PyObject *keywds);
   PyObject* _ResolutionParameterVertexPartition_quality(PyObject *self, PyObject *args, PyObject *keywds);
-
+  void _RBConfigurationVertexPartitionWeightedLayers_set_edge_layer_weights(PyObject *py_partition, PyObject* py_weights_by_layer );
 #ifdef __cplusplus
 }
 #endif
