@@ -116,7 +116,21 @@ def test_multilayer_louvain():
 	opt.optimise_partition_multiplex(partitions=[RBCpartobj,InterlayerPartobj])
 
 
-	print(RBCpartobj.quality(resolution_parameter=1.0))
+	print('louvain mod',RBCpartobj.quality(resolution_parameter=1.0)+InterlayerPartobj.quality())
+	A=ml_sbm.get_intralayer_adj()
+	C = ml_sbm.get_interlayer_adj()
+	P=np.zeros((ml_sbm.N,ml_sbm.N))
+	for i in range(mgraph.nlayers):
+		cdegres=mgraph.get_intralayer_degrees(i)
+		cinds=np.where(mgraph.layer_vec==i)[0]
+		P[np.ix_(cinds,cinds)]=np.outer(cdegres,cdegres.T)/(1.0*np.sum(cdegres))
+
+
+
+	partarray=champ.create_coefarray_from_partitions(A_mat=A,P_mat=P,C_mat=C,
+										   partition_array=[np.array(RBCpartobj.membership)])
+	print  ('champ mod', partarray[0][0] - partarray[0][1] + partarray[0][2])
+
 	print()
 	# gamma=1.0
 	# omega=1
@@ -136,7 +150,7 @@ def test_multilayer_louvain():
 	# plt.show()
 
 def main():
-	test_diff_move()
+	test_multilayer_louvain()
 
 if __name__=='__main__':
 	sys.exit(main())

@@ -64,10 +64,12 @@ vector<double> RBConfigurationVertexPartitionWeightedLayers::_compute_total_laye
     for (size_t l = 0; l < degree_by_layers[v].size(); ++l)
       total_layer_weights[l] += degree_by_layers[v][l];
 
-    cerr << "total_layer_weight, " << endl;
-    for( size_t i=0; i<total_layer_weights.size(); ++i)
-        {cerr << total_layer_weights[i] << ' ';}
-    cerr<<endl;
+    #ifdef DEBUG
+        cerr << "total_layer_weight, " << endl;
+        for( size_t i=0; i<total_layer_weights.size(); ++i)
+            {cerr << total_layer_weights[i] << ' ';}
+        cerr<<endl;
+    #endif
 
     if (! this->graph->is_directed())
         {
@@ -766,7 +768,7 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
     temp=this->multiply_vectors_elementwise(k_out,K_in_new);
     temp=this->divide_vectors_elementwise(temp,total_weight);
     diff_new -= this->resolution_parameter*this->sum_over_vector(temp);
-    diff_new += (this->sum_over_vector(w_from_new)+self_weight);//self_weight should be scalar
+    diff_new += (this->sum_over_vector(w_from_new)+2.0*self_weight);//self_weight should be scalar
     temp = this->multiply_vectors_elementwise(k_in,K_out_new);
     temp = this->divide_vectors_elementwise(temp,total_weight);
     diff_new -= (this->resolution_parameter*this->sum_over_vector(temp));
