@@ -506,7 +506,7 @@ void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new
       v      -- The node which to check.
       comm   -- The community which to check.
 *****************************************************************************/
-vector<double> RBConfigurationVertexPartitionWeightedLayers::weight_to_comm_by_layer(size_t v, size_t comm)
+vector<double> const& RBConfigurationVertexPartitionWeightedLayers::weight_to_comm_by_layer(size_t v, size_t comm)
 {
   if (this->_current_node_cache_community_to != v)
   {
@@ -535,7 +535,7 @@ double RBConfigurationVertexPartitionWeightedLayers::weight_to_comm(size_t v, si
       v      -- The node which to check.
       comm   -- The community which to check.
 *****************************************************************************/
-vector<double> RBConfigurationVertexPartitionWeightedLayers::weight_from_comm_by_layer(size_t v, size_t comm)
+vector<double> const& RBConfigurationVertexPartitionWeightedLayers::weight_from_comm_by_layer(size_t v, size_t comm)
 {
   if (this->_current_node_cache_community_from != v)
   {

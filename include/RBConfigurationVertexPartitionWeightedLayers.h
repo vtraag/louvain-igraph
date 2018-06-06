@@ -24,22 +24,22 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     size_t get_empty_community();
     size_t add_empty_community();
 
-    vector <double> weight_to_comm_by_layer(size_t v, size_t comm);
-    vector <double> weight_from_comm_by_layer(size_t v, size_t comm);
+    vector<double> const& weight_to_comm_by_layer(size_t v, size_t comm);
+    vector<double> const& weight_from_comm_by_layer(size_t v, size_t comm);
 
     double weight_to_comm(size_t v, size_t comm); //overridden to sum over layers and return total
     double weight_from_comm(size_t v, size_t comm);
 
-    inline vector<double> total_weight_in_comm_by_layer(size_t comm) { return this->_total_weight_in_comm_by_layer[comm]; };
+    inline vector<double> const& total_weight_in_comm_by_layer(size_t comm) { return this->_total_weight_in_comm_by_layer[comm]; };
     virtual inline double total_weight_in_comm(size_t comm) { return this->sum_over_vector(this->_total_weight_in_comm_by_layer[comm]); };
 
-    inline vector<double> total_weight_from_comm_by_layer(size_t comm) { return this->_total_weight_from_comm_by_layer[comm]; };
+    inline vector<double> const& total_weight_from_comm_by_layer(size_t comm) { return this->_total_weight_from_comm_by_layer[comm]; };
     virtual inline double total_weight_from_comm(size_t comm) { return this->sum_over_vector(this->_total_weight_from_comm_by_layer[comm]); };
 
-    inline vector<double> total_weight_to_comm_by_layer(size_t comm) { return this->_total_weight_to_comm_by_layer[comm]; };
+    inline vector<double> const& total_weight_to_comm_by_layer(size_t comm) { return this->_total_weight_to_comm_by_layer[comm]; };
     virtual inline double total_weight_to_comm(size_t comm) { return this->sum_over_vector(this->_total_weight_to_comm_by_layer[comm]); };
 
-    inline vector<double> total_weight_in_all_comms_by_layer() { return this->_total_weight_in_all_comms_by_layer; };
+    inline vector<double> const& total_weight_in_all_comms_by_layer() { return this->_total_weight_in_all_comms_by_layer; };
     virtual inline double total_weight_in_all_comms(){ return this->_total_weight_in_all_comms; }
 
     inline size_t nb_layers() {return this->_nb_layers;};

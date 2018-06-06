@@ -204,7 +204,7 @@ class Graph
     inline bool is_singlelayer() { return this->_layer_count == 0; }
     inline void set_layer_count(size_t n) { this->_layer_count = n; };
 
-    inline vector<vector<double> > get_all_edge_layer_weights() { return this->_edge_layer_weights;};
+    inline vector<vector<double> > const& get_all_edge_layer_weights() { return this->_edge_layer_weights;};
     inline vector<double> const& edge_layer_weights(size_t e) { return this->_edge_layer_weights[e]; };
     inline double edge_layer_weight(size_t e, size_t l) { return this->_edge_layer_weights[e][l]; };
     inline void set_edge_layer_weights(vector<vector<double> > &edge_layer_weights)
@@ -218,7 +218,7 @@ class Graph
     inline vector<vector<double> > const& degrees_by_layers() { return this->_layer_strength_in; }
     inline vector<double> const& degree_by_layers(size_t v) { return this->_layer_strength_in[v]; }
 
-    inline vector<double> layer_strength(size_t v, igraph_neimode_t mode) {
+    inline vector<double> const& layer_strength(size_t v, igraph_neimode_t mode) {
       if (mode == IGRAPH_IN)
         return this->_layer_strength_in[v];
       else if (mode == IGRAPH_OUT)
