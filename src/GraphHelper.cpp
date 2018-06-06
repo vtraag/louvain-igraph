@@ -92,7 +92,6 @@ Graph::Graph(igraph_t* graph,
     throw Exception("Layer membership vector inconsistent length with the vertex count of the graph.");
   this->_layer_vec = layer_vec;
 
-  // TODO: is node_self_weights necessary here?
   this->_correct_self_loops = correct_self_loops;
   this->set_self_weights();
   this->init_admin();
@@ -596,8 +595,6 @@ void Graph::init_edge_layer_weights()
   {
     w = this->edge_weight(e);
     igraph_edge(this->_graph, e, &v, &u);
-
-    // TODO: check undirected edges are stored in the same way as directed ones
     this->_edge_layer_weights[e][layer_vec[u]] += w;
   }
 }
@@ -621,8 +618,6 @@ void Graph::init_layer_strength() {
   {
     igraph_edge(this->_graph, e, &v, &u);
 
-    // TODO: verify igraph stores directed edges as v->u
-    // TODO: verify meaning of singlelayer in/out strength
     for (size_t l = 0; l < layers; ++l) {
       layer_strength_in[u][l] += this->edge_layer_weight(e, l);
       layer_strength_out[v][l] += this->edge_layer_weight(e, l);
@@ -673,7 +668,6 @@ vector<vector<double> > Graph::collapse_edge_layer_weights(MutableVertexPartitio
   for (size_t v = 0; v < n_collapsed; v++) {
     for (map<size_t, vector<double> >::iterator itr = collapsed_edges[v].begin();
          itr != collapsed_edges[v].end(); itr++) {
-      // TODO: verify this matches the edge ordering of Graph::collapse_graph()
       collapsed_edge_layer_weights[e_idx] = itr->second;
       e_idx += 1;
     }
