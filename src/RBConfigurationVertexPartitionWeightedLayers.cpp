@@ -47,9 +47,6 @@ RBConfigurationVertexPartitionWeightedLayers* RBConfigurationVertexPartitionWeig
 
 RBConfigurationVertexPartitionWeightedLayers* RBConfigurationVertexPartitionWeightedLayers::create(Graph* graph, vector<size_t> const& membership)
 {
-  // TODO: verify we can remove this; degree_by_layer condensing should occur as a result of Graph::collapse_graph()
-  // vector<vector<double> > new_degree_by_layer = this->_condense_degree_by_layer(membership);
-
   return new RBConfigurationVertexPartitionWeightedLayers(graph, membership, this->resolution_parameter);
 }
 

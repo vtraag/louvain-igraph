@@ -723,7 +723,6 @@ extern "C"
           }
         }
 
-        // TODO: determine if layer_vec initialization should be in the partition or the graph itself
         partition = new RBConfigurationVertexPartitionWeightedLayers(graph, initial_membership, resolution_parameter);
       }
       else
