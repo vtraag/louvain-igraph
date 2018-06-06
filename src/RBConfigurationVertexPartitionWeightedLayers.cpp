@@ -216,8 +216,7 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
   this->_current_node_cache_community_to = n + 1;   this->_clear_resize(_cached_weight_to_community,n,nb_layers);
   this->_current_node_cache_community_all = n + 1;  this->_clear_resize(_cached_weight_all_community,n,nb_layers);
 
-  this->_total_weight_in_all_comms_by_layer.resize(this->nb_layers());
-
+  this->_total_weight_in_all_comms_by_layer=vector<double> (this->nb_layers(),0);
   for (size_t v = 0; v < n; v++)
   {
     size_t v_comm = this->_membership[v];
@@ -273,7 +272,10 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
       #endif
     }
   }
+
   this->_total_weight_in_all_comms=this->sum_over_vector(_total_weight_in_all_comms_by_layer);
+
+
 
   this->_total_possible_edges_in_all_comms = 0;
   for (size_t c = 0; c < nb_comms; c++)
