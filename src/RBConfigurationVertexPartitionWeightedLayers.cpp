@@ -273,6 +273,7 @@ void RBConfigurationVertexPartitionWeightedLayers::init_admin()
       #endif
     }
   }
+  this->_total_weight_in_all_comms=this->sum_over_vector(_total_weight_in_all_comms_by_layer);
 
   this->_total_possible_edges_in_all_comms = 0;
   for (size_t c = 0; c < nb_comms; c++)
@@ -516,6 +517,17 @@ vector<double> RBConfigurationVertexPartitionWeightedLayers::weight_to_comm_by_l
 
   return this->_cached_weight_to_community[comm];
 }
+//override this to sum over the layers
+double RBConfigurationVertexPartitionWeightedLayers::weight_to_comm(size_t v, size_t comm)
+{
+  if (this->_current_node_cache_community_to != v)
+  {
+    this->cache_neigh_communities_by_layer(v, IGRAPH_OUT);
+    this->_current_node_cache_community_to = v;
+  }
+
+  return this->sum_over_vector(this->_cached_weight_to_community[comm]);
+}
 
 /****************************************************************************
  Calculate what is the total weight going from a community to a node.
@@ -533,6 +545,16 @@ vector<double> RBConfigurationVertexPartitionWeightedLayers::weight_from_comm_by
   }
 
   return this->_cached_weight_from_community[comm];
+}
+double RBConfigurationVertexPartitionWeightedLayers::weight_from_comm(size_t v, size_t comm)
+{
+  if (this->_current_node_cache_community_from != v)
+  {
+    this->cache_neigh_communities_by_layer(v, IGRAPH_OUT);
+    this->_current_node_cache_community_from = v;
+  }
+
+  return this->sum_over_vector(this->_cached_weight_from_community[comm]);
 }
 
 void RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities_by_layer(size_t v, igraph_neimode_t mode)

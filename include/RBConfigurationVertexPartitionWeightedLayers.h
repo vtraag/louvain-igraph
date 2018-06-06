@@ -27,10 +27,21 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     vector <double> weight_to_comm_by_layer(size_t v, size_t comm);
     vector <double> weight_from_comm_by_layer(size_t v, size_t comm);
 
+    double weight_to_comm(size_t v, size_t comm); //overridden to sum over layers and return total
+    double weight_from_comm(size_t v, size_t comm);
+
     inline vector<double> total_weight_in_comm_by_layer(size_t comm) { return this->_total_weight_in_comm_by_layer[comm]; };
+    virtual inline double total_weight_in_comm(size_t comm) { return this->sum_over_vector(this->_total_weight_in_comm_by_layer[comm]); };
+
     inline vector<double> total_weight_from_comm_by_layer(size_t comm) { return this->_total_weight_from_comm_by_layer[comm]; };
+    virtual inline double total_weight_from_comm(size_t comm) { return this->sum_over_vector(this->_total_weight_from_comm_by_layer[comm]); };
+
     inline vector<double> total_weight_to_comm_by_layer(size_t comm) { return this->_total_weight_to_comm_by_layer[comm]; };
+    virtual inline double total_weight_to_comm(size_t comm) { return this->sum_over_vector(this->_total_weight_to_comm_by_layer[comm]); };
+
     inline vector<double> total_weight_in_all_comms_by_layer() { return this->_total_weight_in_all_comms_by_layer; };
+    virtual inline double total_weight_in_all_comms(){ return this->_total_weight_in_all_comms; }
+
     inline size_t nb_layers() {return this->_nb_layers;};
 
 
@@ -76,6 +87,7 @@ class RBConfigurationVertexPartitionWeightedLayers : public LinearResolutionPara
     vector<vector<double> > _total_weight_from_comm_by_layer;
     // Keep track of the total internal weight
     vector <double> _total_weight_in_all_comms_by_layer;
+    double _total_weight_in_all_comms;
     size_t _total_possible_edges_in_all_comms;
 
 //    vector<size_t> _empty_communities;
