@@ -864,7 +864,7 @@ class RBConfigurationVertexPartitionWeightedLayers(LinearResolutionParameterVert
       n, edges, weights, node_sizes,edge_layer_weights = _c_louvain._MutableVertexPartition_get_py_igraph(partition,True)
       graph = _ig.Graph(n=n,
                         edges=edges,
-                        edge_attrs={'weight': weights},
+                        edge_attrs={'weight': weights,"layer_weights":edge_layer_weights},
                         vertex_attrs={'node_size': node_sizes})
 
       new_partition = cls(graph)

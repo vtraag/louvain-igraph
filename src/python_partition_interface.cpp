@@ -183,37 +183,37 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
 }
 
 
-void _RBConfigurationVertexPartitionWeightedLayers_set_edge_layer_weights(PyObject* py_partition, PyObject* py_weights_by_layer) {
- MutableVertexPartition* partition = decapsule_MutableVertexPartition(py_partition);
- Graph* graph = partition->get_graph();
-
- vector<vector<double> > edge_weights_by_layer;
- size_t m = PyList_Size(py_weights_by_layer);
-
- edge_weights_by_layer.resize(m);
- for (size_t e = 0; e < m; e++) {
-   PyObject* py_item = PyList_GetItem(py_weights_by_layer, e);
-   size_t layers = PyList_Size(py_item);
-   edge_weights_by_layer[e].resize(layers);
-   for (size_t l = 0; l < layers; l++) {
-     PyObject* py_item_item = PyList_GetItem(py_item, l);
-     #ifdef IS_PY3K
-     if (PyFloat_Check(py_item_item) || PyLong_Check(py_item_item))
-     #else
-     if (PyFloat_Check(py_item_item) || PyInt_Check(py_item_item) || PyLong_Check(py_item_item))
-     #endif
-     {
-       edge_weights_by_layer[e][l] = PyFloat_AsDouble(py_item_item);
-     } else {
-       PyErr_SetString(PyExc_TypeError, "Expected float value for edge weight vector.");
-
-     }
-   }
- }
-
- graph->set_edge_layer_weights(edge_weights_by_layer);
- graph->init_layer_strength();
-}
+//void _RBConfigurationVertexPartitionWeightedLayers_set_edge_layer_weights(PyObject* py_partition, PyObject* py_weights_by_layer) {
+// MutableVertexPartition* partition = decapsule_MutableVertexPartition(py_partition);
+// Graph* graph = partition->get_graph();
+//
+// vector<vector<double> > edge_weights_by_layer;
+// size_t m = PyList_Size(py_weights_by_layer);
+//
+// edge_weights_by_layer.resize(m);
+// for (size_t e = 0; e < m; e++) {
+//   PyObject* py_item = PyList_GetItem(py_weights_by_layer, e);
+//   size_t layers = PyList_Size(py_item);
+//   edge_weights_by_layer[e].resize(layers);
+//   for (size_t l = 0; l < layers; l++) {
+//     PyObject* py_item_item = PyList_GetItem(py_item, l);
+//     #ifdef IS_PY3K
+//     if (PyFloat_Check(py_item_item) || PyLong_Check(py_item_item))
+//     #else
+//     if (PyFloat_Check(py_item_item) || PyInt_Check(py_item_item) || PyLong_Check(py_item_item))
+//     #endif
+//     {
+//       edge_weights_by_layer[e][l] = PyFloat_AsDouble(py_item_item);
+//     } else {
+//       PyErr_SetString(PyExc_TypeError, "Expected float value for edge weight vector.");
+//
+//     }
+//   }
+// }
+//
+// graph->set_edge_layer_weights(edge_weights_by_layer);
+// graph->init_layer_strength();
+//}
 
 PyObject* capsule_MutableVertexPartition(MutableVertexPartition* partition)
 {
@@ -808,7 +808,16 @@ extern "C"
 
     if (PyObject_IsTrue(py_return_edge_layer_weights)){
         vector <vector<double > > edge_layer_weights=graph->get_all_edge_layer_weights();
-        return Py_BuildValue("lOOOO", n, edges, weights, node_sizes,edge_layer_weights);
+        PyObject* clist;
+        PyObject* py_edge_layer_weights = PyList_New(edge_layer_weights.size());
+        for (size_t e = 0; e < edge_layer_weights.size(); e++ ){
+            clist=PyList_New(graph->lcount());
+            for (size_t l = 0; l < graph->lcount(); l++) {
+                PyList_SetItem(clist,l,PyFloat_FromDouble(edge_layer_weights[e][l]));
+            }
+            PyList_SetItem(py_edge_layer_weights,e,clist);
+        }
+        return Py_BuildValue("lOOOO", n, edges, weights, node_sizes,py_edge_layer_weights);
     }
 
     return Py_BuildValue("lOOO", n, edges, weights, node_sizes);
