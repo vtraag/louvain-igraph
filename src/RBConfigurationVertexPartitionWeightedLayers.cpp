@@ -174,8 +174,6 @@ double RBConfigurationVertexPartitionWeightedLayers::sum_over_vector(vector<doub
   return output;
 }
 
-
-
 /*****************************************************************************
   Overriden methods from Mutable Vertex Partition
 *****************************************************************************/
@@ -426,7 +424,7 @@ void RBConfigurationVertexPartitionWeightedLayers::move_node(size_t v,size_t new
       size_t u_comm = this->_membership[u];
       // Get the weight of the edge
 //      double w=this->graph->edge_weight(e)
-      vector<double> w_layer = this->graph->edge_weight_layers(e);
+      vector<double> w_layer = this->graph->edge_layer_weights(e);
       if (mode == IGRAPH_OUT)
       {
         // Remove the weight from the outgoing weights of the old community
@@ -549,7 +547,7 @@ double RBConfigurationVertexPartitionWeightedLayers::weight_from_comm(size_t v, 
 {
   if (this->_current_node_cache_community_from != v)
   {
-    this->cache_neigh_communities_by_layer(v, IGRAPH_OUT);
+    this->cache_neigh_communities_by_layer(v, IGRAPH_IN);
     this->_current_node_cache_community_from = v;
   }
 
@@ -563,7 +561,8 @@ void RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities_by_la
 
   // Weight between vertex and community
   #ifdef DEBUG
-    cerr << "double RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities_by_layer(" << v << ", " << mode << ")." << endl;
+    cerr << "double RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities_by_layer(" << v << ", "
+         << mode << ")." << endl;
   #endif
   vector<vector<double> >* _cached_weight_tofrom_community = NULL;
   vector<size_t>* _cached_neighs = NULL;
@@ -584,13 +583,8 @@ void RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities_by_la
   }
 
   // Reset cached communities
-  for (vector<size_t>::iterator it = _cached_neighs->begin();
-       it != _cached_neighs->end();
-       it++)
-       {
-       vector<double> temp (this->nb_layers(),0);
-       (*_cached_weight_tofrom_community)[*it] = temp;
-       }
+  for (vector<size_t>::iterator it = _cached_neighs->begin(); it != _cached_neighs->end(); it++)
+    std::fill((*_cached_weight_tofrom_community)[*it].begin(), (*_cached_weight_tofrom_community)[*it].end(), 0);
 
   // Loop over all incident edges
   vector<size_t> const& neighbours = this->graph->get_neighbours(v, mode);
@@ -612,14 +606,15 @@ void RBConfigurationVertexPartitionWeightedLayers::cache_neigh_communities_by_la
     #endif
     size_t comm = this->_membership[u];
     // Get the weight of the edge
-    vector< double> w = this->graph->edge_weight_layers(e);
+    vector<double> const& w = this->graph->edge_layer_weights(e);
     // Self loops appear twice here if the graph is undirected, so divide by 2.0 in that case.
     if (u == v && !this->graph->is_directed())
-        w = this->scalar_multiply(1/2.0,w);
-    #ifdef DEBUG
-      cerr << "\t" << "Edge (" << v << "-" << u << "), Comm (" << comm << "-" << u_comm << ") weight: " << w << "." << endl;
-    #endif
-    (*_cached_weight_tofrom_community)[comm] = this->add_vectors((*_cached_weight_tofrom_community)[comm],w);
+      for (size_t i = 0; i < (*_cached_weight_tofrom_community)[comm].size(); ++i)
+        (*_cached_weight_tofrom_community)[comm][i] += w[i] / 2.0;
+    else
+      for (size_t i = 0; i < (*_cached_weight_tofrom_community)[comm].size(); ++i)
+        (*_cached_weight_tofrom_community)[comm][i] += w[i];
+
     // REMARK: Notice in the rare case of negative weights, being exactly equal
     // for a certain community, that this community may then potentially be added multiple
     // times to the _cached_neighs. However, I don' believe this causes any further issue,
@@ -695,116 +690,36 @@ double RBConfigurationVertexPartitionWeightedLayers::diff_move(size_t v, size_t 
   size_t old_comm = this->_membership[v];
   double diff = 0.0;
 
-  //if graph is directed
-  vector <double> total_weight = this->scalar_multiply(2.0 - this->graph->is_directed(),this->_total_layer_weights);
-//  vector <double> total_weight = this->_total_layer_weights;
-
-  if (this->sum_over_vector(total_weight) == 0.0)
+  if ((2.0 - this->graph->is_directed()) * this->sum_over_vector(this->_total_layer_weights) == 0.0)
     return 0.0;
   if (new_comm != old_comm)
   {
+    double diff_old = 0.0;
+    double diff_new = 2.0 * this->graph->node_self_weight(v);
 
-    vector<double> w_to_old = this->weight_to_comm_by_layer(v, old_comm);
-    vector<double> w_from_old = this->weight_from_comm_by_layer(v, old_comm);
-    vector<double> w_to_new = this->weight_to_comm_by_layer(v, new_comm);
-    vector<double> w_from_new = this->weight_from_comm_by_layer(v, new_comm);
+    for (size_t l = 0; l < this->graph->lcount(); ++l)
+    {
+      double total_weight = (2.0 - this->graph->is_directed()) * this->_total_layer_weights[l];
 
-    vector<double> k_out = this->graph->layer_strength(v,IGRAPH_OUT);
+      double w_to_old = this->weight_to_comm_by_layer(v, old_comm)[l];
+      double w_from_old = this->weight_from_comm_by_layer(v, old_comm)[l];
+      double w_to_new = this->weight_to_comm_by_layer(v, new_comm)[l];
+      double w_from_new = this->weight_from_comm_by_layer(v, new_comm)[l];
+      double k_out = this->graph->layer_strength(v, IGRAPH_OUT)[l];
+      double k_in = this->graph->layer_strength(v, IGRAPH_IN)[l];
+      double K_out_old = this->total_weight_from_comm_by_layer(old_comm)[l];
+      double K_in_old = this->total_weight_to_comm_by_layer(old_comm)[l];
 
-    vector<double> k_in = this->graph->layer_strength(v,IGRAPH_IN);
+      double K_out_new = this->total_weight_from_comm_by_layer(new_comm)[l] + k_out;
+      double K_in_new = this->total_weight_to_comm_by_layer(new_comm)[l] + k_in;
 
-    double self_weight = this->graph->node_self_weight(v);
-
-    vector<double> K_out_old = this->total_weight_from_comm_by_layer(old_comm);
-
-    vector<double> K_in_old = this->total_weight_to_comm_by_layer(old_comm);
-
-    vector<double> temp = this->total_weight_from_comm_by_layer(new_comm);
-
-    vector<double> K_out_new = this->add_vectors(temp,k_out);
-
-    temp = this->total_weight_to_comm_by_layer(new_comm);
-
-    vector<double> K_in_new = this->add_vectors(temp, k_in);
-    #ifdef DEBUG
-        cerr << "w_to_old, ";
-        for( size_t i=0; i<w_to_old.size(); ++i)
-            {cerr << w_to_old[i] << ' ';}
-        cerr<<endl;
-        cerr << "w_from_old, " ;
-        for( size_t i=0; i<w_from_old.size(); ++i)
-            {cerr << w_from_old[i] << ' ';}
-        cerr<<endl;
-        cerr << "w_to_new, ";
-        for( size_t i=0; i<w_to_new.size(); ++i)
-            {cerr << w_to_new[i] << ' ';}
-        cerr<<endl;
-        cerr << "w_from_new, " ;
-        for( size_t i=0; i<w_from_new.size(); ++i)
-            {cerr << w_from_new[i] << ' ';}
-        cerr<<endl;
-        cerr << "k_out, " ;
-        for( size_t i=0; i<k_out.size(); ++i)
-            {cerr << k_out[i] << ' ';}
-        cerr<<endl;
-        cerr << "k_in, " ;
-        for( size_t i=0; i<k_in.size(); ++i)
-            {cerr << k_in[i] << ' ';}
-        cerr<<endl;
-        cerr << "self_weight, " << self_weight<< endl;
-
-        cerr << "K_in_old, ";
-        for( size_t i=0; i<K_in_old.size(); ++i)
-            {cerr << K_in_old[i] << ' ';}
-        cerr<<endl;
-        cerr << "K_in_new, " ;
-        for( size_t i=0; i<K_in_new.size(); ++i)
-            {cerr << K_in_new[i] << ' ';}
-        cerr<<endl;
-        cerr << "K_out_old, ";
-        for( size_t i=0; i<K_out_old.size(); ++i)
-            {cerr << K_out_old[i] << ' ';}
-        cerr<<endl;
-        cerr << "K_out_new, ";
-        for( size_t i=0; i<K_out_new.size(); ++i)
-            {cerr << K_out_new[i] << ' ';}
-        cerr<<endl;
-        cerr << "total_weight, " ;
-        for( size_t i=0; i<total_weight.size(); ++i)
-            {cerr << total_weight[i] << ' ';}
-        cerr<<endl;
-    #endif
-    //vectorized versions
-    double diff_old=this->sum_over_vector(w_to_old);
-    temp=this->multiply_vectors_elementwise(k_out,K_in_old);
-    temp=this->divide_vectors_elementwise(temp,total_weight);
-    diff_old-=this->resolution_parameter*this->sum_over_vector(temp);
-    diff_old+=(this->sum_over_vector(w_from_old));
-    temp=this->multiply_vectors_elementwise(k_in,K_out_old);
-    temp=this->divide_vectors_elementwise(temp,total_weight);
-    diff_old-=(this->resolution_parameter*this->sum_over_vector(temp));
-
-
-    double diff_new = this->sum_over_vector(w_to_new);
-    temp=this->multiply_vectors_elementwise(k_out,K_in_new);
-    temp=this->divide_vectors_elementwise(temp,total_weight);
-    diff_new -= this->resolution_parameter*this->sum_over_vector(temp);
-    diff_new += (this->sum_over_vector(w_from_new)+2.0*self_weight);//self_weight should be scalar
-    temp = this->multiply_vectors_elementwise(k_in,K_out_new);
-    temp = this->divide_vectors_elementwise(temp,total_weight);
-    diff_new -= (this->resolution_parameter*this->sum_over_vector(temp));
-
-//    cerr << "diff_old, " << diff_old << endl;
-//    cerr << "diff_new, " << diff_new << endl;
-
-//    double diff_old = (w_to_old - this->resolution_parameter*k_out*K_in_old/total_weight) + \
-//               (w_from_old - this->resolution_parameter*k_in*K_out_old/total_weight);
-
-//    double diff_new = (w_to_new + self_weight - this->resolution_parameter*k_out*K_in_new/total_weight) + \
-//               (w_from_new + self_weight - this->resolution_parameter*k_in*K_out_new/total_weight);
+      diff_old += (w_to_old - this->resolution_parameter * k_out * K_in_old / total_weight) +
+                  (w_from_old - this->resolution_parameter * k_in * K_out_old / total_weight);
+      diff_new += (w_to_new - this->resolution_parameter * k_out * K_in_new / total_weight) +
+                  (w_from_new - this->resolution_parameter * k_in * K_out_new / total_weight);
+    }
 
     diff = diff_new - diff_old;
-
   }
   #ifdef DEBUG
     cerr << "exit RBConfigurationVertexPartitionWeightedLayers::diff_move(" << v << ", " << new_comm << ")" << endl;

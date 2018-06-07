@@ -153,15 +153,6 @@ class Graph
       return this->_edge_weights[e];
     };
 
-    inline vector<double> edge_weight_layers(size_t e)
-    {
-      #ifdef DEBUG
-      if (e > this->_edge_layer_weights.size())
-        throw Exception("Edges outside of range of edge weights.");
-      #endif
-      return this->_edge_layer_weights[e];
-    };
-
     inline vector<size_t> edge(size_t e)
     {
       igraph_integer_t v1, v2;
