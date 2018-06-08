@@ -155,7 +155,6 @@ extern "C"
     }
     catch (std::exception e)
     {
-
       PyErr_SetString(PyExc_ValueError, e.what());
       return NULL;
     }

@@ -6,7 +6,6 @@
 #include <map>
 
 #include <iostream>
-#include <Python.h>
 using std::cerr;
 using std::endl;
 using std::set;
