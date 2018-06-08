@@ -182,39 +182,6 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
   return graph;
 }
 
-
-//void _RBConfigurationVertexPartitionWeightedLayers_set_edge_layer_weights(PyObject* py_partition, PyObject* py_weights_by_layer) {
-// MutableVertexPartition* partition = decapsule_MutableVertexPartition(py_partition);
-// Graph* graph = partition->get_graph();
-//
-// vector<vector<double> > edge_weights_by_layer;
-// size_t m = PyList_Size(py_weights_by_layer);
-//
-// edge_weights_by_layer.resize(m);
-// for (size_t e = 0; e < m; e++) {
-//   PyObject* py_item = PyList_GetItem(py_weights_by_layer, e);
-//   size_t layers = PyList_Size(py_item);
-//   edge_weights_by_layer[e].resize(layers);
-//   for (size_t l = 0; l < layers; l++) {
-//     PyObject* py_item_item = PyList_GetItem(py_item, l);
-//     #ifdef IS_PY3K
-//     if (PyFloat_Check(py_item_item) || PyLong_Check(py_item_item))
-//     #else
-//     if (PyFloat_Check(py_item_item) || PyInt_Check(py_item_item) || PyLong_Check(py_item_item))
-//     #endif
-//     {
-//       edge_weights_by_layer[e][l] = PyFloat_AsDouble(py_item_item);
-//     } else {
-//       PyErr_SetString(PyExc_TypeError, "Expected float value for edge weight vector.");
-//
-//     }
-//   }
-// }
-//
-// graph->set_edge_layer_weights(edge_weights_by_layer);
-// graph->init_layer_strength();
-//}
-
 PyObject* capsule_MutableVertexPartition(MutableVertexPartition* partition)
 {
   PyObject* py_partition = PyCapsule_New(partition, "louvain.VertexPartition.MutableVertexPartition", del_MutableVertexPartition);
