@@ -1,138 +1,111 @@
+import igraph as ig
 import louvain
-import sys, os
 import numpy as np
+from random import randint
+import sys
 
-np.set_printoptions(precision=4, suppress=True)
-import matplotlib.pyplot as plt
-import sklearn.metrics as skm
-import champ
-import modbp
+
+def isclose(a, b):
+    return abs(a - b) <= 1e-10
+
+
+def calculate_coefficient(com_vec, adj_matrix):
+    '''
+    For a given connection matrix and set of community labels, calculate the coefficient
+    for plane/line associated with that connectivity matrix
+    :param com_vec: list or vector with community membership for each element of network
+    ordered the same as the rows/col of adj_matrix
+    :param adj_matrix: adjacency matrix for connections to calculate coefficients for
+    (i.e. A_ij, P_ij, C_ij, etc..) ordered the same as com_vec
+    :return:
+    '''
+
+    assert com_vec.shape[0] == adj_matrix.shape[0]
+    idx_sort = np.argsort(com_vec)
+    _, idx_start = np.unique(com_vec[idx_sort], return_index=True)
+    c_inds = np.split(idx_sort, idx_start[1:])
+
+    # adjacency matrix sum over the community blocks
+    return sum(np.sum(adj_matrix[np.ix_(c_ind, c_ind)]) for c_ind in c_inds)
 
 
 def test_diff_move():
-    n = 100
-    q = 4
-    nlayers = 4
-    nblocks = q
-    c = 4
-    ep = .1
-    eta = .1
-    pin = (n * c / (2.0)) / ((n / float(q)) * (n / float(q) - 1) / 2.0 * float(q) + ep * (q * (q - 1) / 2.0) * (
-        np.power(n / (q * 1.0), 2.0)))
+    intraslice = ig.Graph.Read_Ncol("multilayer_SBM_interslice_edges.csv", directed=False)
+    n = intraslice.vcount()
+    layer_vec = [0] * n
+    membership = list(range(n))
 
-    pout = ep * pin
+    part_rbc = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=1.0,
+                                                      initial_membership=membership)
+    part_weighted_layers = louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
+                                                                               layer_vec=layer_vec,
+                                                                               initial_membership=membership)
 
-    prob_mat = np.identity(nblocks) * pin + (np.ones((nblocks, nblocks)) - np.identity(nblocks)) * pout
+    # check diff_move() - quality() consistency across 100 random moves
+    for repeat in range(100):
+        v = randint(0, n - 1)
+        c = randint(0, n - 1)
+        old_quality = part_weighted_layers.quality()
+        wl_diff = part_weighted_layers.diff_move(v, c)
+        part_weighted_layers.move_node(v, c)
+        true_diff = part_weighted_layers.quality() - old_quality
 
-    sbm = modbp.RandomSBMGraph(n, comm_prob_mat=prob_mat, use_gcc=False)
-    layer_vec = [0 for _ in range(sbm.graph.vcount())]  # add extra node to use
-    # memvec = sbm.block
-    memvec = range(sbm.graph.vcount())
-    intraslice, interslice = champ.create_multilayer_igraph_from_edgelist(intralayer_edges=sbm.get_edgelist(),
-                                                                          interlayer_edges=[], layer_vec=layer_vec)
+        rbc_diff = part_rbc.diff_move(v, c)
+        part_rbc.move_node(v, c)
 
-    # partobj = louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
-    #                                                                layer_vec=layer_vec, initial_membership=memvec)
-    # partobj2 = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=1.0,
-    #                                                   initial_membership=memvec)
-    # print(partobj.diff_move(5, 15))
-    # old_qual = partobj.quality()
-    # partobj.move_node(5, 15)
-    # print(partobj.quality() - old_qual)
-    # print(partobj.quality())
-    # print(partobj2.diff_move(5, 15))
-    # print(partobj.quality())
-    # print(partobj2.quality())
-    # louvain.set_rng_seed(0)
-    partobj = louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
-                                                                   layer_vec=layer_vec)
-    # partobj = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=1.0)
+        assert isclose(wl_diff, true_diff), "WeightedLayers diff_move() inconsistent with quality()"
+        assert isclose(wl_diff, rbc_diff), "WeightedLayers diff_move() inconsistent with single-layer"
+        assert isclose(part_weighted_layers.quality(),
+                       part_rbc.quality()), "WeightedLayers quality() inconsistent with single-layer"
+
+    # check rng consistency between RBConfigurationVertexPartition and its WeightedLayers variant
+    louvain.set_rng_seed(0)
+    part_weighted_layers = louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
+                                                                               layer_vec=layer_vec)
     opt = louvain.Optimiser()
-    opt.optimise_partition(partition=partobj)
-    print(partobj.quality(resolution_parameter=1.0))
+    opt.optimise_partition(partition=part_weighted_layers)
 
-    # louvain.set_rng_seed(0)
-    # partobj2 = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=1.0)
-    # opt = louvain.Optimiser()
-    # opt.optimise_partition(partition=partobj2)
-    # print(partobj2.quality(resolution_parameter=1.0))
+    louvain.set_rng_seed(0)
+    part_rbc = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=1.0)
+    opt = louvain.Optimiser()
+    opt.optimise_partition(partition=part_rbc)
+
+    assert isclose(part_weighted_layers.quality(),
+                   part_rbc.quality()), "WeightedLayers optimisation inconsistent with single-layer"
 
 
 def test_multilayer_louvain():
-    n = 100
-    q = 4
-    nlayers = 4
-    nblocks = q
-    c = 4
-    ep = .1
-    eta = .1
-    pin = (n * c / (2.0)) / ((n / float(q)) * (n / float(q) - 1) / 2.0 * float(q) + ep * (q * (q - 1) / 2.0) * (
-        np.power(n / (q * 1.0), 2.0)))
+    intraslice = ig.Graph.Read_Ncol("multilayer_SBM_intraslice_edges.csv", directed=False)
+    interslice = ig.Graph.Read_Ncol("multilayer_SBM_interslice_edges.csv", directed=False)
+    n_layers = 4
+    n = intraslice.vcount() // n_layers
+    layer_vec = np.array([i // n for i in range(n * n_layers)])
 
-    pout = ep * pin
-
-    prob_mat = np.identity(nblocks) * pin + (np.ones((nblocks, nblocks)) - np.identity(nblocks)) * pout
-
-    ml_sbm = modbp.MultilayerSBM(n, comm_prob_mat=prob_mat, layers=nlayers, transition_prob=eta)
-
-    mgraph = modbp.MultilayerGraph(intralayer_edges=ml_sbm.intraedges, interlayer_edges=ml_sbm.interedges,
-                                   layer_vec=ml_sbm.layer_vec,
-                                   comm_vec=ml_sbm.get_all_layers_block())
-    intraslice, interslice = champ.create_multilayer_igraph_from_edgelist(intralayer_edges=mgraph.intralayer_edges,
-                                                                          interlayer_edges=mgraph.interlayer_edges,
-                                                                          layer_vec=mgraph.layer_vec)
-
-    alldegrees = intraslice.degree()
-    layers = np.unique(mgraph.layer_vec)
-    degree_by_layer = np.zeros((len(alldegrees), len(layers)))
-
-    for i, d in enumerate(alldegrees):  # split out by layers
-        degree_by_layer[i][mgraph.layer_vec[i]] = d
-
-    print(np.sum(degree_by_layer, axis=0))
-
-    RBCpartobj = louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
-                                                                      layer_vec=mgraph.layer_vec.tolist())
-    InterlayerPartobj = louvain.RBConfigurationVertexPartition(interslice, resolution_parameter=0.0)
+    intralayer_part = louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
+                                                                           layer_vec=layer_vec.tolist())
+    interlayer_part = louvain.RBConfigurationVertexPartition(interslice, resolution_parameter=0.0)
 
     opt = louvain.Optimiser()
-    opt.optimise_partition_multiplex(partitions=[RBCpartobj, InterlayerPartobj])
+    opt.optimise_partition_multiplex(partitions=[intralayer_part, interlayer_part])
 
-    print('louvain mod', RBCpartobj.quality(resolution_parameter=1.0) + InterlayerPartobj.quality())
-    A = ml_sbm.get_intralayer_adj()
-    C = ml_sbm.get_interlayer_adj()
-    P = np.zeros((ml_sbm.N, ml_sbm.N))
-    for i in range(mgraph.nlayers):
-        cdegres = mgraph.get_intralayer_degrees(i)
-        cinds = np.where(mgraph.layer_vec == i)[0]
-        P[np.ix_(cinds, cinds)] = np.outer(cdegres, cdegres.T) / (1.0 * np.sum(cdegres))
+    louvain_mod = intralayer_part.quality(resolution_parameter=1.0) + interlayer_part.quality()
+    A = np.array(intraslice.get_adjacency()._get_data())
+    C = np.array(interslice.get_adjacency()._get_data())
+    P = np.zeros((n_layers * n, n_layers * n))
+    for i in range(n_layers):
+        c_degrees = np.array(intraslice.degree(list(range(n * i, n * i + n))))
+        c_inds = np.where(layer_vec == i)[0]
+        P[np.ix_(c_inds, c_inds)] = np.outer(c_degrees, c_degrees.T) / (1.0 * np.sum(c_degrees))
 
-    partarray = champ.create_coefarray_from_partitions(A_mat=A, P_mat=P, C_mat=C,
-                                                       partition_array=[np.array(RBCpartobj.membership)])
-    print('champ mod', partarray[0][0] - partarray[0][1] + partarray[0][2])
+    membership = np.array(intralayer_part.membership)
+    true_mod = sum(calculate_coefficient(membership, X) for X in (A, -P, C))
 
-    print()
-
-    # gamma = 1.0
-    # omega = 1
-    # args = (layers, interslice, gamma, omega)
-    # part = champ.louvain_ext._parallel_run_louvain_multimodularity(args)
-    #
-    # print(skm.adjusted_mutual_info_score(part[0]['partition'], mgraph.comm_vec))
-    #
-    # plt.close()
-    # a = plt.subplot2grid((1, 2), (0, 0))
-    # a.set_title('Ground')
-    # champ.plot_multilayer_community(mgraph.comm_vec, mgraph.layer_vec, ax=a)
-    # a = plt.subplot2grid((1, 2), (0, 1))
-    # a.set_title("Multilayer gamma={:.3f},omega={:.3f}".format(gamma, omega))
-    # champ.plot_multilayer_community(part[0]['partition'], mgraph.layer_vec, ax=a)
-    # plt.gcf().set_size_inches((10, 5))
-    # plt.show()
+    assert isclose(louvain_mod, true_mod), "WeightedLayers quality() inconsistent with alternate calculation"
 
 
 def main():
     test_multilayer_louvain()
+    test_diff_move()
 
 
 if __name__ == '__main__':
