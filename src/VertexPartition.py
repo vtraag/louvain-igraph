@@ -2,7 +2,6 @@ import igraph as _ig
 from . import _c_louvain
 from .functions import _get_py_capsule
 import sys
-import numpy as np
 # Check if working with Python 3
 PY3 = (sys.version > '3')
 
@@ -853,11 +852,8 @@ class RBConfigurationVertexPartitionWeightedLayers(LinearResolutionParameterVert
 
 
     if layer_vec is not  None:
-      layer_vec=np.array(layer_vec).tolist()
-      # if isinstance(layer_vec, np.ndarray):
-      #   layer_vec = layer_vec.tolist()
-      # elif layer_vec is not None:
-      #   layer_vec = list(layer_vec)
+      layer_vec=[int(val) for val in layer_vec]
+
 
     else:
       layer_vec = [0 for _ in range(graph.vcount())] #default is to assume single layer
