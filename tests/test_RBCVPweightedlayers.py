@@ -102,7 +102,6 @@ def test_multilayer_louvain():
 
     assert isclose(louvain_mod, true_mod), "WeightedLayers quality() inconsistent with alternate calculation"
 
-
 def main():
     test_multilayer_louvain()
     test_diff_move()

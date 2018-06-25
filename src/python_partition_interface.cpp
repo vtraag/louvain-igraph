@@ -140,7 +140,7 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
       if (PyInt_Check(py_item) || PyLong_Check(py_item))
       #endif
       {
-        layer_vec[v] = PyLong_AsLong(py_item);
+        layer_vec[v] = PyNumber_AsSsize_t(py_item,PyExc_IndexError);
       }
       else
       {

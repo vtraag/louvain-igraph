@@ -852,7 +852,8 @@ class RBConfigurationVertexPartitionWeightedLayers(LinearResolutionParameterVert
 
 
     if layer_vec is not  None:
-      layer_vec=[int(val) for val in layer_vec]
+      layer_vec=list(layer_vec)
+      # layer_vec=[int(val) for val in layer_vec]
 
 
     else:
