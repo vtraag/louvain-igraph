@@ -766,6 +766,7 @@ double RBConfigurationVertexPartitionWeightedLayers::quality(double resolution_p
 
         temp=this->multiply_vectors_elementwise(w_out,w_in);
         temp=this->divide_vectors_elementwise(temp,mdiv);
+        temp=this->scalar_multiply(resolution_parameter,temp);
         temp=this->subtract_vectors(w,temp);
         mod+=this->sum_over_vector(temp);
 

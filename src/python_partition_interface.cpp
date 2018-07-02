@@ -134,11 +134,12 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
     for (size_t v = 0; v < n; v++)
     {
       PyObject* py_item = PyList_GetItem(py_layer_vec, v);
-      #ifdef IS_PY3K
-      if (PyLong_Check(py_item))
-      #else
-      if (PyInt_Check(py_item) || PyLong_Check(py_item))
-      #endif
+//      #ifdef IS_PY3K
+//      if (PyNumber_Check(py_item))
+//      #else
+//      if (PyInt_Check(py_item) || PyLong_Check(py_item))
+//      #endif
+      if (PyNumber_Check(py_item))
       {
         layer_vec[v] = PyNumber_AsSsize_t(py_item,PyExc_IndexError);
       }
