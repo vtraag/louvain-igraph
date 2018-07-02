@@ -38,8 +38,8 @@ def test_diff_move():
     part_rbc = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=1.0,
                                                       initial_membership=membership)
     part_weighted_layers = louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
-                                                                               layer_vec=layer_vec,
-                                                                               initial_membership=membership)
+                                                                                layer_vec=layer_vec,
+                                                                                initial_membership=membership)
 
     # check diff_move() - quality() consistency across 100 random moves
     for repeat in range(100):
@@ -59,19 +59,25 @@ def test_diff_move():
                        part_rbc.quality()), "WeightedLayers quality() inconsistent with single-layer"
 
     # check rng consistency between RBConfigurationVertexPartition and its WeightedLayers variant
-    louvain.set_rng_seed(0)
-    part_weighted_layers = louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
-                                                                               layer_vec=layer_vec)
-    opt = louvain.Optimiser()
-    opt.optimise_partition(partition=part_weighted_layers)
+    # with various seeds and intraslice resolution parameters
+    for gamma in np.linspace(0.5, 1.5, 10):
+        shared_seed = randint(-1 << 31, (1 << 31) - 1)  # random int32
 
-    louvain.set_rng_seed(0)
-    part_rbc = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=1.0)
-    opt = louvain.Optimiser()
-    opt.optimise_partition(partition=part_rbc)
+        louvain.set_rng_seed(shared_seed)
+        part_weighted_layers = louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice,
+                                                                                    resolution_parameter=gamma,
+                                                                                    layer_vec=layer_vec)
+        opt = louvain.Optimiser()
+        opt.optimise_partition(partition=part_weighted_layers)
 
-    assert isclose(part_weighted_layers.quality(),
-                   part_rbc.quality()), "WeightedLayers optimisation inconsistent with single-layer"
+        louvain.set_rng_seed(shared_seed)
+        part_rbc = louvain.RBConfigurationVertexPartition(intraslice, resolution_parameter=gamma)
+        opt = louvain.Optimiser()
+        opt.optimise_partition(partition=part_rbc)
+
+        quality_weighted_layers = part_weighted_layers.quality(resolution_parameter=gamma)
+        quality_rbc = part_rbc.quality(resolution_parameter=gamma)
+        assert isclose(quality_weighted_layers, quality_rbc), "Intra-layer optimisation inconsistent with single-layer"
 
 
 def test_multilayer_louvain():
@@ -81,26 +87,34 @@ def test_multilayer_louvain():
     n = intraslice.vcount() // n_layers
     layer_vec = np.array([i // n for i in range(n * n_layers)])
 
+    intraslice.es['weight'] = 1.0
     intralayer_part = louvain.RBConfigurationVertexPartitionWeightedLayers(intraslice, resolution_parameter=1.0,
-                                                                           layer_vec=layer_vec.tolist())
-    interlayer_part = louvain.RBConfigurationVertexPartition(interslice, resolution_parameter=0.0)
+                                                                           layer_vec=layer_vec,
+                                                                           weights='weight')
 
-    opt = louvain.Optimiser()
-    opt.optimise_partition_multiplex(partitions=[intralayer_part, interlayer_part])
+    for omega in np.linspace(0.5, 1.5, 10):
+        interslice.es['weight'] = omega
 
-    louvain_mod = intralayer_part.quality(resolution_parameter=1.0) + interlayer_part.quality()
-    A = np.array(intraslice.get_adjacency()._get_data())
-    C = np.array(interslice.get_adjacency()._get_data())
-    P = np.zeros((n_layers * n, n_layers * n))
-    for i in range(n_layers):
-        c_degrees = np.array(intraslice.degree(list(range(n * i, n * i + n))))
-        c_inds = np.where(layer_vec == i)[0]
-        P[np.ix_(c_inds, c_inds)] = np.outer(c_degrees, c_degrees.T) / (1.0 * np.sum(c_degrees))
+        interlayer_part = louvain.RBConfigurationVertexPartition(interslice, resolution_parameter=0.0, weights='weight')
 
-    membership = np.array(intralayer_part.membership)
-    true_mod = sum(calculate_coefficient(membership, X) for X in (A, -P, C))
+        opt = louvain.Optimiser()
+        opt.optimise_partition_multiplex(partitions=[intralayer_part, interlayer_part])
 
-    assert isclose(louvain_mod, true_mod), "WeightedLayers quality() inconsistent with alternate calculation"
+        louvain_mod = intralayer_part.quality(resolution_parameter=1.0) + interlayer_part.quality()
+
+        A = np.array(intraslice.get_adjacency()._get_data())
+        C = omega * np.array(interslice.get_adjacency()._get_data())
+        P = np.zeros((n_layers * n, n_layers * n))
+        for i in range(n_layers):
+            c_degrees = np.array(intraslice.degree(list(range(n * i, n * i + n))))
+            c_inds = np.where(layer_vec == i)[0]
+            P[np.ix_(c_inds, c_inds)] = np.outer(c_degrees, c_degrees.T) / (1.0 * np.sum(c_degrees))
+
+        membership = np.array(intralayer_part.membership)
+        true_mod = sum(calculate_coefficient(membership, X) for X in (A, -P, C))
+
+        assert isclose(louvain_mod, true_mod), "WeightedLayers quality() inconsistent with alternate calculation"
+
 
 def main():
     test_multilayer_louvain()
