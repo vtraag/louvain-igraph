@@ -1,6 +1,6 @@
 **Warning** 
 
-This package has been superseded by the ` ``leidenalg`` <https://github.com/vtraag/leidenalg>`_ package and will no longer be maintained.
+This package has been superseded by the `leidenalg <https://github.com/vtraag/leidenalg>`_ package and will no longer be maintained.
 
 louvain-igraph
 ==============
