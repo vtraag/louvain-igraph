@@ -93,21 +93,17 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
     #endif
     size_t nb_weights = PyList_Size(py_weights);
     if (nb_weights != m)
-      throw("Weight vector not the same size as the number of edges.");
+      throw Exception("Weight vector not the same size as the number of edges.");
     weights.resize(m);
     for (size_t e = 0; e < m; e++)
     {
       PyObject* py_item = PyList_GetItem(py_weights, e);
       #ifdef DEBUG
         PyObject* py_item_repr = PyObject_Repr(py_item);
-        const char* s = PyString_AsString(py_item_repr);
+        const char* s = PyUnicode_AsUTF8(py_item_repr);
         cerr << "Got item " << e << ": " << s << endl;
       #endif
-      #ifdef IS_PY3K
-      if (PyFloat_Check(py_item) || PyLong_Check(py_item))
-      #else
-      if (PyFloat_Check(py_item) || PyInt_Check(py_item) || PyLong_Check(py_item))
-      #endif
+      if (PyNumber_Check(py_item))
       {
         weights[e] = PyFloat_AsDouble(py_item);
       }
@@ -117,10 +113,14 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
       }
 
       if (check_positive_weight)
-      {
-          if (weights[e] < 0)
-            throw Exception("Cannot accept negative weights.");
-      }
+        if (weights[e] < 0 )
+          throw Exception("Cannot accept negative weights.");
+
+      if (isnan(weights[e]))
+        throw Exception("Cannot accept NaN weights.");
+
+      if (!isfinite(weights[e]))
+        throw Exception("Cannot accept infinite weights.");
     }
   }
 
@@ -238,13 +238,13 @@ extern "C"
         for (size_t v = 0; v < n; v++)
         {
           PyObject* py_item = PyList_GetItem(py_initial_membership, v);
-          #ifdef IS_PY3K
-          if (PyLong_Check(py_item))
-          #else
-          if (PyInt_Check(py_item) || PyLong_Check(py_item))
-          #endif
+          if (PyNumber_Check(py_item) && PyIndex_Check(py_item))
           {
-            initial_membership[v] = PyLong_AsLong(py_item);
+            Py_ssize_t m = PyNumber_AsSsize_t(py_item, NULL);
+            if (m >= 0)
+              initial_membership[v] = m;
+            else
+              throw Exception("Membership cannot be negative");
           }
           else
           {
@@ -275,7 +275,7 @@ extern "C"
       return NULL;
     }
   }
-  
+
 
   PyObject* _new_SignificanceVertexPartition(PyObject *self, PyObject *args, PyObject *keywds)
   {
@@ -309,13 +309,13 @@ extern "C"
         for (size_t v = 0; v < n; v++)
         {
           PyObject* py_item = PyList_GetItem(py_initial_membership, v);
-          #ifdef IS_PY3K
-          if (PyLong_Check(py_item))
-          #else
-          if (PyInt_Check(py_item) || PyLong_Check(py_item))
-          #endif
+          if (PyNumber_Check(py_item) && PyIndex_Check(py_item))
           {
-            initial_membership[v] = PyLong_AsLong(py_item);
+            Py_ssize_t m = PyNumber_AsSsize_t(py_item, NULL);
+            if (m >= 0)
+              initial_membership[v] = m;
+            else
+              throw Exception("Membership cannot be negative");
           }
           else
           {
@@ -380,13 +380,13 @@ extern "C"
         for (size_t v = 0; v < n; v++)
         {
           PyObject* py_item = PyList_GetItem(py_initial_membership, v);
-          #ifdef IS_PY3K
-          if (PyLong_Check(py_item))
-          #else
-          if (PyInt_Check(py_item) || PyLong_Check(py_item))
-          #endif
+          if (PyNumber_Check(py_item) && PyIndex_Check(py_item))
           {
-            initial_membership[v] = PyLong_AsLong(py_item);
+            Py_ssize_t m = PyNumber_AsSsize_t(py_item, NULL);
+            if (m >= 0)
+              initial_membership[v] = m;
+            else
+              throw Exception("Membership cannot be negative");
           }
           else
           {
@@ -456,13 +456,13 @@ extern "C"
         for (size_t v = 0; v < n; v++)
         {
           PyObject* py_item = PyList_GetItem(py_initial_membership, v);
-          #ifdef IS_PY3K
-          if (PyLong_Check(py_item))
-          #else
-          if (PyInt_Check(py_item) || PyLong_Check(py_item))
-          #endif
+          if (PyNumber_Check(py_item) && PyIndex_Check(py_item))
           {
-            initial_membership[v] = PyLong_AsLong(py_item);
+            Py_ssize_t m = PyNumber_AsSsize_t(py_item, NULL);
+            if (m >= 0)
+              initial_membership[v] = m;
+            else
+              throw Exception("Membership cannot be negative");
           }
           else
           {
@@ -529,13 +529,13 @@ extern "C"
         for (size_t v = 0; v < n; v++)
         {
           PyObject* py_item = PyList_GetItem(py_initial_membership, v);
-          #ifdef IS_PY3K
-          if (PyLong_Check(py_item))
-          #else
-          if (PyInt_Check(py_item) || PyLong_Check(py_item))
-          #endif
+          if (PyNumber_Check(py_item) && PyIndex_Check(py_item))
           {
-            initial_membership[v] = PyLong_AsLong(py_item);
+            Py_ssize_t m = PyNumber_AsSsize_t(py_item, NULL);
+            if (m >= 0)
+              initial_membership[v] = m;
+            else
+              throw Exception("Membership cannot be negative");
           }
           else
           {
@@ -601,13 +601,13 @@ extern "C"
         for (size_t v = 0; v < n; v++)
         {
           PyObject* py_item = PyList_GetItem(py_initial_membership, v);
-          #ifdef IS_PY3K
-          if (PyLong_Check(py_item))
-          #else
-          if (PyInt_Check(py_item) || PyLong_Check(py_item))
-          #endif
+          if (PyNumber_Check(py_item) && PyIndex_Check(py_item))
           {
-            initial_membership[v] = PyLong_AsLong(py_item);
+            Py_ssize_t m = PyNumber_AsSsize_t(py_item, NULL);
+            if (m >= 0)
+              initial_membership[v] = m;
+            else
+              throw Exception("Membership cannot be negative");
           }
           else
           {
@@ -817,13 +817,13 @@ extern "C"
     for (size_t v = 0; v < n; v++)
     {
       PyObject* py_item = PyList_GetItem(py_membership, v);
-      #ifdef IS_PY3K
-      if (PyLong_Check(py_item))
-      #else
-      if (PyInt_Check(py_item) || PyLong_Check(py_item))
-      #endif
+      if (PyNumber_Check(py_item) && PyIndex_Check(py_item))
       {
-        membership[v] = PyLong_AsLong(py_item);
+        Py_ssize_t m = PyNumber_AsSsize_t(py_item, NULL);
+        if (m >= 0)
+          membership[v] = m;
+        else
+          throw Exception("Membership cannot be negative");
       }
       else
       {
@@ -851,13 +851,14 @@ extern "C"
       for (size_t v = 0; v < n; v++)
       {
         PyObject* py_item = PyList_GetItem(py_coarse_node, v);
-        #ifdef IS_PY3K
-        if (PyLong_Check(py_item))
-        #else
-        if (PyInt_Check(py_item) || PyLong_Check(py_item))
-        #endif
+
+        if (PyNumber_Check(py_item) && PyIndex_Check(py_item))
         {
-          coarse_node[v] = PyLong_AsLong(py_item);
+          Py_ssize_t m = PyNumber_AsSsize_t(py_item, NULL);
+          if (m >= 0)
+            coarse_node[v] = m;
+          else
+            throw Exception("Coarse node cannot be negative");
         }
         else
         {
@@ -1355,7 +1356,7 @@ extern "C"
     PyObject* py_membership = PyList_New(n);
     for (size_t v = 0; v < n; v++)
     {
-      #ifdef IS_PY3K 
+      #ifdef IS_PY3K
         PyObject* item = PyLong_FromSize_t(partition->membership(v));
       #else
         PyObject* item = PyInt_FromSize_t(partition->membership(v));
@@ -1400,13 +1401,14 @@ extern "C"
     for (size_t v = 0; v < n; v++)
     {
       PyObject* py_item = PyList_GetItem(py_membership, v);
-      #ifdef IS_PY3K
-      if (PyLong_Check(py_item))
-      #else
-      if (PyInt_Check(py_item) || PyLong_Check(py_item))
-      #endif
+
+      if (PyNumber_Check(py_item) && PyIndex_Check(py_item))
       {
-        membership[v] = PyLong_AsLong(py_item);
+          Py_ssize_t m = PyNumber_AsSsize_t(py_item, NULL);
+          if (m >= 0)
+            membership[v] = m;
+          else
+            throw Exception("Membership node cannot be negative");
       }
       else
       {
@@ -1443,11 +1445,11 @@ extern "C"
     #endif
 
     #ifdef DEBUG
-      cerr << "Capsule ResolutionParameterVertexPartition at address " << py_ResolutionParameterVertexPartition << endl;
+      cerr << "Capsule ResolutionParameterVertexPartition at address " << py_partition << endl;
     #endif
     ResolutionParameterVertexPartition* partition = (ResolutionParameterVertexPartition*)decapsule_MutableVertexPartition(py_partition);
     #ifdef DEBUG
-      cerr << "Using ResolutionParameterVertexPartition at address " << ResolutionParameterVertexPartition << endl;
+      cerr << "Using ResolutionParameterVertexPartition at address " << partition << endl;
     #endif
 
     return PyFloat_FromDouble(partition->resolution_parameter);
@@ -1468,15 +1470,15 @@ extern "C"
         return NULL;
 
     #ifdef DEBUG
-      cerr << "set_resolution(" << resolution << ");" << endl;
+      cerr << "set_resolution(" << resolution_parameter << ");" << endl;
     #endif
 
     #ifdef DEBUG
-      cerr << "Capsule ResolutionParameterVertexPartition at address " << py_ResolutionParameterVertexPartition << endl;
+      cerr << "Capsule ResolutionParameterVertexPartition at address " << py_partition << endl;
     #endif
     ResolutionParameterVertexPartition* partition = (ResolutionParameterVertexPartition*)decapsule_MutableVertexPartition(py_partition);
     #ifdef DEBUG
-      cerr << "Using ResolutionParameterVertexPartition at address " << ResolutionParameterVertexPartition << endl;
+      cerr << "Using ResolutionParameterVertexPartition at address " << partition << endl;
     #endif
 
     partition->resolution_parameter = resolution_parameter;
@@ -1513,11 +1515,7 @@ extern "C"
 
     if (py_res != NULL && py_res != Py_None)
     {
-      #ifdef IS_PY3K
-      if (PyFloat_Check(py_res) || PyLong_Check(py_res))
-      #else
-      if (PyFloat_Check(py_res) || PyInt_Check(py_res) || PyLong_Check(py_res))
-      #endif
+      if (PyNumber_Check(py_res))
       {
         resolution_parameter = PyFloat_AsDouble(py_res);
       }
@@ -1526,6 +1524,9 @@ extern "C"
         PyErr_SetString(PyExc_TypeError, "Expected floating point value for resolution parameter.");
         return NULL;
       }
+
+      if (isnan(resolution_parameter))
+        throw Exception("Cannot accept NaN resolution parameter.");
     }
     else
       resolution_parameter = partition->resolution_parameter;

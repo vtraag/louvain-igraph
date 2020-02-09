@@ -122,15 +122,10 @@ extern "C"
       PyObject* layer_weight = PyList_GetItem(py_layer_weights, layer);
 
       partitions[layer] = partition;
-      #ifdef IS_PY3K
-      if (PyFloat_Check(layer_weight) || PyLong_Check(layer_weight))
-      #else
-      if (PyFloat_Check(layer_weight) || PyInt_Check(layer_weight) || PyLong_Check(layer_weight))
-      #endif
+
+
+      if (PyNumber_Check(layer_weight))
       {
-        #ifdef DEBUG
-          cerr << "Layer weight " << PyFloat_AsDouble(layer_weight) << endl;
-        #endif
         layer_weights[layer] = PyFloat_AsDouble(layer_weight);
       }
       else
@@ -138,6 +133,9 @@ extern "C"
         PyErr_SetString(PyExc_TypeError, "Expected floating value for layer weight.");
         return NULL;
       }
+
+      if (isnan(layer_weights[layer]))
+        throw Exception("Cannot accept NaN weights.");
     }
 
     #ifdef DEBUG
@@ -342,6 +340,41 @@ extern "C"
     #endif
 
     return PyBool_FromLong(optimiser->consider_empty_community);
+  }
+
+  PyObject* _Optimiser_set_rng_seed(PyObject *self, PyObject *args, PyObject *keywds)
+  {
+    PyObject* py_optimiser = NULL;
+    int seed = 0;
+    static char* kwlist[] = {"optimiser", "seed", NULL};
+
+    #ifdef DEBUG
+      cerr << "Parsing arguments..." << endl;
+    #endif
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "Oi", kwlist,
+                                     &py_optimiser, &seed))
+        return NULL;
+
+    #ifdef DEBUG
+      cerr << "set_rng_seed(" << seed << ");" << endl;
+    #endif
+
+    #ifdef DEBUG
+      cerr << "Capsule optimiser at address " << py_optimiser << endl;
+    #endif
+    Optimiser* optimiser = decapsule_Optimiser(py_optimiser);
+    #ifdef DEBUG
+      cerr << "Using optimiser at address " << optimiser << endl;
+    #endif
+
+    #ifdef DEBUG
+      cerr << "Setting seed to " << seed << endl;
+    #endif
+    optimiser->set_rng_seed(seed);
+
+    Py_INCREF(Py_None);
+    return Py_None;
   }
 
 #ifdef __cplusplus

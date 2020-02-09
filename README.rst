@@ -1,3 +1,7 @@
+**Warning** 
+
+This package has been superseded by the `leidenalg <https://github.com/vtraag/leidenalg>`_ package and will no longer be maintained.
+
 louvain-igraph
 ==============
 
@@ -26,7 +30,7 @@ bipartite graphs. See the `documentation
 
 .. image:: https://zenodo.org/badge/31305324.svg
                 :target: https://zenodo.org/badge/latestdoi/31305324
-                :alt: DOI 
+                :alt: DOI
 Installation
 ------------
 
@@ -37,7 +41,7 @@ For Unix like systems it is possible to install from source. For Windows this
 is overly complicated, and you are recommended to use the binary installation
 files.  There are two things that are needed by this package: the igraph ``C``
 core library and the python-igraph python package. For both, please see
-http://igraph.org. 
+http://igraph.org.
 
 Make sure you have all necessary tools for compilation. In Ubuntu this can be
 installed using ``sudo apt-get install build-essential``, please refer to the
@@ -118,7 +122,7 @@ Please cite the references appropriately in case they are used.
 
 .. [1] Blondel, V. D., Guillaume, J.-L., Lambiotte, R., & Lefebvre, E. (2008).
        Fast unfolding of communities in large networks. Journal of Statistical
-       Mechanics: Theory and Experiment, 10008(10), 6. 
+       Mechanics: Theory and Experiment, 10008(10), 6.
        `10.1088/1742-5468/2008/10/P10008 <http://doi.org/10.1088/1742-5468/2008/10/P10008>`_
 
 .. [2] Newman, M. E. J., & Girvan, M. (2004). Finding and evaluating community
@@ -169,4 +173,3 @@ PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
 this program. If not, see http://www.gnu.org/licenses/.
-

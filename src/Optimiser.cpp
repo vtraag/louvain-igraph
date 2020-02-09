@@ -23,11 +23,15 @@
 Optimiser::Optimiser()
 {
   this->consider_comms = Optimiser::ALL_NEIGH_COMMS;
+  this->consider_empty_community = true;
+
+  igraph_rng_init(&rng, &igraph_rngtype_mt19937);
+  igraph_rng_seed(&rng, rand());
 }
 
 Optimiser::~Optimiser()
 {
-  //dtor
+  igraph_rng_destroy(&rng);
 }
 
 void Optimiser::print_settings()
@@ -112,7 +116,7 @@ double Optimiser::optimise_partition(vector<MutableVertexPartition*> partitions,
         q += partitions[layer]->quality()*layer_weights[layer];
       cerr << "Quality before moving " <<  q << endl;
     #endif
-    
+
     improv = this->move_nodes(collapsed_partitions, layer_weights);
     total_improv += improv;
 
@@ -300,7 +304,7 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
 
   // We use a random order, we shuffle this order.
   vector<size_t> nodes = range(n);
-  shuffle(nodes);
+  shuffle(nodes, &rng);
 
   // Initialize the degree vector
   // If we want to debug the function, we will calculate some additional values.
@@ -356,14 +360,14 @@ double Optimiser::move_nodes(vector<MutableVertexPartition*> partitions, vector<
       else if (consider_comms == RAND_COMM)
       {
         /****************************RAND COMM***********************************/
-        comms.insert( partitions[0]->membership(graphs[0]->get_random_node()) );
+        comms.insert( partitions[0]->membership(graphs[0]->get_random_node(&rng)) );
       }
       else if (consider_comms == RAND_NEIGH_COMM)
       {
         /****************************RAND NEIGH COMM*****************************/
-        size_t rand_layer = get_random_int(0, nb_layers - 1);
+        size_t rand_layer = get_random_int(0, nb_layers - 1, &rng);
         if (graphs[rand_layer]->degree(v, IGRAPH_ALL) > 0)
-          comms.insert( partitions[0]->membership(graphs[rand_layer]->get_random_neighbour(v, IGRAPH_ALL)) );
+          comms.insert( partitions[0]->membership(graphs[rand_layer]->get_random_neighbour(v, IGRAPH_ALL, &rng)) );
       }
 
       #ifdef DEBUG

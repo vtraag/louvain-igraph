@@ -30,8 +30,8 @@ class Optimiser(object):
   @property
   def consider_comms(self):
     """ Determine how alternative communities are considered for moving
-    a node for *optimising* a partition. 
-    
+    a node for *optimising* a partition.
+
     Nodes will only move to alternative communities that improve the given
     quality function.
 
@@ -62,7 +62,7 @@ class Optimiser(object):
   def consider_comms(self, value):
     _c_louvain._Optimiser_set_consider_comms(self._optimiser, value)
 
-  #########################################################3
+  ##########################################################
   # consider_empty_community
   @property
   def consider_empty_community(self):
@@ -73,6 +73,11 @@ class Optimiser(object):
   @consider_empty_community.setter
   def consider_empty_community(self, value):
     _c_louvain._Optimiser_set_consider_empty_community(self._optimiser, value)
+
+  ##########################################################
+  # Set rng seed
+  def set_rng_seed(self, value):
+    _c_louvain._Optimiser_set_rng_seed(self._optimiser, value)
 
   def optimise_partition(self, partition):
     """ Optimise the given partition.
@@ -254,7 +259,7 @@ class Optimiser(object):
 
     Returns
     -------
-    list of :class:`~VertexPartition.MutableVertexPartition` 
+    list of :class:`~VertexPartition.MutableVertexPartition`
       A list of partitions for different resolutions.
 
     Other Parameters
@@ -289,7 +294,7 @@ class Optimiser(object):
     --------
     >>> G = ig.Graph.Famous('Zachary')
     >>> optimiser = louvain.Optimiser()
-    >>> profile = optimiser.resolution_profile(G, louvain.CPMVertexPartition, 
+    >>> profile = optimiser.resolution_profile(G, louvain.CPMVertexPartition,
     ...                                        resolution_range=(0,1))
     """
 
@@ -346,8 +351,7 @@ class Optimiser(object):
         n_itr += 1
       return partition
 
-    assert(issubclass(partition_type, LinearResolutionParameterVertexPartition),
-        "Bisectioning only works on partitions with a linear resolution parameter.")
+    assert issubclass(partition_type, LinearResolutionParameterVertexPartition), "Bisectioning only works on partitions with a linear resolution parameter."
     # Start actual bisectioning
     bisect_values = {}
     stack_res_range = []
