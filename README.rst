@@ -152,12 +152,6 @@ Please cite the references appropriately in case they are used.
        networks. Science, 328(5980), 876–8. `10.1126/science.1184819
        <http://doi.org/10.1126/science.1184819>`_
 
-.. [10] Zanini, F., Berghuis, B. A., Jones, R. C., Robilant, B. N. di,
-        Nong, R. Y., Norton, J., Clarke, Michael F., Quake, S. R. (2019).
-        northstar: leveraging cell atlases to identify healthy and neoplastic
-        cells in transcriptomes from human tumors. BioRxiv, 820928.
-        `10.1101/820928 <https://doi.org/10.1101/820928>`_
-
 Licence
 -------
 
