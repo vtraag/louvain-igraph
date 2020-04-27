@@ -59,3 +59,9 @@ try:
 except DistributionNotFound:
      # package is not installed
     pass
+
+import warnings
+warnings.warn('This package has been superseded by the `leidenalg` package '
+              'and will no longer be maintained. Please upgrade to the `leidenalg` package.',
+              DeprecationWarning,
+              stacklevel=2)
