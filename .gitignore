@@ -39,3 +39,5 @@ massif*
 *.code-workspace
 PACKAGE.txt
 louvain-igraph.cscope_file_list
+.eggs/
+vendor/install/igraph
