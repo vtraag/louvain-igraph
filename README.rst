@@ -26,8 +26,8 @@ bipartite graphs. See the `documentation
                 :target: http://louvain-igraph.readthedocs.io/en/latest/
                 :alt: Louvain documentation status
 
-.. image:: https://travis-ci.org/vtraag/louvain-igraph.svg
-                :target: https://travis-ci.org/vtraag/louvain-igraph
+.. image:: https://ci.appveyor.com/api/projects/status/sufl628hh8w3guvf?svg=true
+                :target: https://ci.appveyor.com/project/vtraag/louvain-igraph
                 :alt: Louvain build status
 
 .. image:: https://zenodo.org/badge/31305324.svg
