@@ -20,14 +20,14 @@ environment:
       APPVEYOR_JOB_NAME: "python38-x64-macos-mojave"
       CIBW_BUILD: "cp3?-*"
       CIBW_BEFORE_BUILD: "python setup.py build_c_core"
-    - APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2017
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       APPVEYOR_JOB_NAME: "python38-x86-vs2017"
       CIBW_BUILD: "cp3?*-win32"
       MSYSTEM: MINGW32
       PATH: C:\Python38;C:\Python38\Scripts;C:\msys64\usr\bin;C:\msys64\mingw32\bin;C:\Windows\System32;C:\Windows;%PATH%
       TARGET_ARCH: "x86"
       PYTHON: C:\Python38
-    - APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2017
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       APPVEYOR_JOB_NAME: "python38-x64-vs2017"
       CIBW_BUILD: "cp3?*-win_amd64"
       MSYSTEM: MINGW64
