@@ -33,6 +33,11 @@ bipartite graphs. See the `documentation
 .. image:: https://zenodo.org/badge/31305324.svg
                 :target: https://zenodo.org/badge/latestdoi/31305324
                 :alt: DOI
+
+.. image:: https://anaconda.org/conda-forge/louvain/badges/version.svg
+                :target: https://anaconda.org/conda-forge/louvain
+                :alt: Anaconda (conda-forge)
+
 Installation
 ------------
 
