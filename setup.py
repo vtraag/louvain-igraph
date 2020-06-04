@@ -495,8 +495,8 @@ class BuildConfiguration(object):
                     self.run_command("build_c_core")
                     if not buildcfg.c_core_built:
                         # Fall back to an educated guess if everything else failed
-                        if not detected:
-                            buildcfg.use_educated_guess()
+                        # if not detected:
+                        buildcfg.use_educated_guess()
 
                 # Add any extra library paths if needed; this is needed for the
                 # Appveyor CI build
