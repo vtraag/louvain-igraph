@@ -67,6 +67,10 @@ class Graph
     Graph(igraph_t* graph,
       vector<double> const& edge_weights,
       vector<size_t> const& node_sizes,
+      vector<size_t> const& layer_vec, int correct_self_loops);
+    Graph(igraph_t* graph,
+      vector<double> const& edge_weights,
+      vector<size_t> const& node_sizes,
       vector<double> const& node_self_weights, int correct_self_loops);
     Graph(igraph_t* graph,
       vector<double> const& edge_weights,
@@ -92,6 +96,7 @@ class Graph
     size_t possible_edges(size_t n);
 
     Graph* collapse_graph(MutableVertexPartition* partition);
+    vector<vector<double> > collapse_edge_layer_weights(MutableVertexPartition* partition);
 
     double weight_tofrom_community(size_t v, size_t comm, vector<size_t> const& membership, igraph_neimode_t mode);
     void cache_neigh_communities(size_t v, vector<size_t> const& membership, igraph_neimode_t mode);
@@ -112,6 +117,7 @@ class Graph
 
     inline size_t vcount() { return igraph_vcount(this->_graph); };
     inline size_t ecount() { return igraph_ecount(this->_graph); };
+    inline size_t lcount() { return _layer_count; }
     inline double total_weight() { return this->_total_weight; };
     inline size_t total_size() { return this->_total_size; };
     inline int is_directed() { return igraph_is_directed(this->_graph); };
@@ -168,6 +174,32 @@ class Graph
         throw Exception("Incorrect mode specified.");
     };
 
+    inline bool is_singlelayer() { return this->_layer_count == 0; }
+    inline void set_layer_count(size_t n) { this->_layer_count = n; };
+
+    inline vector<vector<double> > const& get_all_edge_layer_weights() { return this->_edge_layer_weights;};
+    inline vector<double> const& edge_layer_weights(size_t e) { return this->_edge_layer_weights[e]; };
+    inline double edge_layer_weight(size_t e, size_t l) { return this->_edge_layer_weights[e][l]; };
+    inline void set_edge_layer_weights(vector<vector<double> > &edge_layer_weights)
+    {
+      this->_edge_layer_weights = edge_layer_weights;
+    }
+    inline vector<size_t> const& layer_memberships() { return this->_layer_vec; }
+    inline size_t layer_membership(size_t v) { return this->_layer_vec[v]; }
+
+    // note degree_by_layers is indexed with [vertex][layer]
+    inline vector<vector<double> > const& degrees_by_layers() { return this->_layer_strength_in; }
+    inline vector<double> const& degree_by_layers(size_t v) { return this->_layer_strength_in[v]; }
+
+    inline vector<double> const& layer_strength(size_t v, igraph_neimode_t mode) {
+      if (mode == IGRAPH_IN)
+        return this->_layer_strength_in[v];
+      else if (mode == IGRAPH_OUT)
+        return this->_layer_strength_out[v];
+      else
+        throw Exception("Incorrect mode specified.");
+    }
+
   protected:
 
     int _remove_graph;
@@ -186,6 +218,17 @@ class Graph
     vector<double> _edge_weights; // Used for the weight of the edges.
     vector<size_t> _node_sizes; // Used for the size of the nodes.
     vector<double> _node_self_weights; // Used for the self weight of the nodes.
+
+    // TODO: consider using vector<map<size_t, double>> for layer-sparse graphs
+    vector<vector<double> > _edge_layer_weights;
+    void init_edge_layer_weights();
+    size_t _layer_count;
+    vector<size_t> _layer_vec;
+    void init_layer_strength();
+
+    vector<vector<double> > _layer_strength_in;
+    // _layer_strength_out is degree_by_layers
+    vector<vector<double> > _layer_strength_out;
 
     void cache_neighbours(size_t v, igraph_neimode_t mode);
     vector<size_t> _cached_neighs_from; size_t _current_node_cache_neigh_from;

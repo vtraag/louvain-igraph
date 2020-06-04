@@ -67,6 +67,41 @@ double KLL(double q, double p)
 Graph::Graph(igraph_t* graph,
   vector<double> const& edge_weights,
   vector<size_t> const& node_sizes,
+  vector<size_t> const& layer_vec, int correct_self_loops)
+{
+  this->_graph = graph;
+  this->_remove_graph = false;
+
+  if (edge_weights.size() == 0)
+    this->set_default_edge_weight();
+  else if (edge_weights.size() != this->ecount())
+    throw Exception("Edge weights vector inconsistent length with the edge count of the graph.");
+  else {
+    this->_edge_weights = edge_weights;
+    this->_is_weighted = true;
+  }
+
+  if (node_sizes.size() == 0)
+    this->set_default_node_size();
+  else if (node_sizes.size() != this->vcount())
+    throw Exception("Node size vector inconsistent length with the vertex count of the graph.");
+  else
+    this->_node_sizes = node_sizes;
+
+  if (layer_vec.size() != this->vcount())
+    throw Exception("Layer membership vector inconsistent length with the vertex count of the graph.");
+  this->_layer_vec = layer_vec;
+
+  this->_correct_self_loops = correct_self_loops;
+  this->set_self_weights();
+  this->init_admin();
+  this->init_edge_layer_weights();
+  this->init_layer_strength();
+}
+
+Graph::Graph(igraph_t* graph,
+  vector<double> const& edge_weights,
+  vector<size_t> const& node_sizes,
   vector<double> const& node_self_weights, int correct_self_loops)
 {
   this->_graph = graph;
@@ -351,7 +386,6 @@ void Graph::set_self_weights()
 
 void Graph::init_admin()
 {
-
   size_t m = this->ecount();
 
   // Determine total weight in the graph.
@@ -432,6 +466,9 @@ void Graph::init_admin()
   // Calculate density;
   double w = this->total_weight();
   size_t n_size = this->total_size();
+
+  // default to single-layer graph, "zero layers"
+  this->_layer_count = 0;
 
   // For now we default to not correcting self loops.
   // this->_correct_self_loops = false; (remove this as this is set in the constructor)
@@ -533,6 +570,110 @@ pair<size_t, size_t> Graph::get_endpoints(size_t e)
   igraph_integer_t from, to;
   igraph_edge(this->_graph, e,&from, &to);
   return make_pair<size_t, size_t>((size_t)from, (size_t)to);
+}
+
+// initializes the per-layer contribution to each edge's weight
+void Graph::init_edge_layer_weights()
+{
+  vector<size_t> const& layer_vec = this->layer_memberships();
+  size_t layers = *std::max_element(layer_vec.begin(), layer_vec.end()) + 1;
+  this->set_layer_count(layers);
+  size_t m = this->ecount();
+
+  // TODO: consider reversing indices to (slightly) reduce memory overhead here
+  this->_edge_layer_weights.clear();
+  this->_edge_layer_weights.resize(m);
+  for (size_t e = 0; e < m; ++e)
+  {
+    this->_edge_layer_weights[e].clear();
+    this->_edge_layer_weights[e].resize(layers);
+  }
+
+  igraph_integer_t v, u;
+  double w;
+  for (size_t e = 0; e < m; ++e)
+  {
+    w = this->edge_weight(e);
+    igraph_edge(this->_graph, e, &v, &u);
+    this->_edge_layer_weights[e][layer_vec[u]] += w;
+  }
+}
+
+// initialize the per-layer contribution to each vertex's in/out degree
+void Graph::init_layer_strength() {
+  size_t layers = this->lcount();
+  size_t n = this->vcount();
+  size_t m = this->ecount();
+
+  vector<vector<double> > layer_strength_in(n);
+  vector<vector<double> > layer_strength_out(n);
+  for (size_t v = 0; v < n; ++v)
+  {
+    layer_strength_in[v].resize(layers);
+    layer_strength_out[v].resize(layers);
+  }
+
+  igraph_integer_t v, u;
+  for (size_t e = 0; e < m; ++e)
+  {
+    igraph_edge(this->_graph, e, &v, &u);
+
+    for (size_t l = 0; l < layers; ++l) {
+      layer_strength_in[u][l] += this->edge_layer_weight(e, l);
+      layer_strength_out[v][l] += this->edge_layer_weight(e, l);
+      if (! this->is_directed() ){ //update in and out for both tail and head
+        layer_strength_out[u][l] += this->edge_layer_weight(e, l);
+        layer_strength_in[v][l] += this->edge_layer_weight(e, l);
+      }
+    }
+
+  }
+
+
+
+  this->_layer_strength_in = layer_strength_in;
+  this->_layer_strength_out = layer_strength_out;
+}
+
+vector<vector<double> > Graph::collapse_edge_layer_weights(MutableVertexPartition *partition)
+{
+  size_t n_collapsed = partition->nb_communities();
+  size_t m_collapsed = 0;
+  size_t m = this->ecount();
+  size_t layers = this->lcount();
+
+  vector<map<size_t, vector<double> > > collapsed_edges(n_collapsed);
+
+  igraph_integer_t v, u;
+  for (size_t e = 0; e < m; e++)
+  {
+    vector<double> layer_weights = this->edge_layer_weights(e);
+    igraph_edge(this->_graph, e, &v, &u);
+    size_t v_comm = partition->membership((size_t)v);
+    size_t u_comm = partition->membership((size_t)u);
+    if (collapsed_edges[v_comm].count(u_comm) > 0)
+      for (size_t l = 0; l < layers; ++l)
+        collapsed_edges[v_comm][u_comm][l] += layer_weights[l];
+    else
+      collapsed_edges[v_comm][u_comm] = this->edge_layer_weights(e);
+  }
+
+  for (vector<map<size_t, vector<double> > >::iterator itr = collapsed_edges.begin();
+       itr != collapsed_edges.end(); itr++)
+    m_collapsed += itr->size();
+
+  vector<vector<double> > collapsed_edge_layer_weights(m_collapsed);
+
+  size_t e_idx = 0;
+  for (size_t v = 0; v < n_collapsed; v++) {
+    for (map<size_t, vector<double> >::iterator itr = collapsed_edges[v].begin();
+         itr != collapsed_edges[v].end(); itr++) {
+      collapsed_edge_layer_weights[e_idx] = itr->second;
+      e_idx += 1;
+    }
+  }
+
+  return collapsed_edge_layer_weights;
 }
 
 void Graph::cache_neighbours(size_t v, igraph_neimode_t mode)
@@ -777,6 +918,17 @@ Graph* Graph::collapse_graph(MutableVertexPartition* partition)
     csizes[c] = partition->csize(c);
 
   Graph* G = new Graph(graph, collapsed_weights, csizes, this->_correct_self_loops);
+
+  if (!this->is_singlelayer())
+  {
+    G->set_layer_count(this->lcount());
+    vector<vector<double> > new_edge_layer_weights = this->collapse_edge_layer_weights(partition);
+    G->set_edge_layer_weights(new_edge_layer_weights);
+
+    // force initialization of degrees_by_layer as well
+    G->init_layer_strength();
+  }
+
   G->_remove_graph = true;
   #ifdef DEBUG
     cerr << "exit Graph::collapse_graph(vector<size_t> membership)" << endl << endl;

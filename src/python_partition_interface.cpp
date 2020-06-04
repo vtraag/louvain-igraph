@@ -26,6 +26,11 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
 
 Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObject* py_node_sizes, int check_positive_weight)
 {
+  return create_graph_from_py(py_obj_graph, py_weights, py_node_sizes, NULL, check_positive_weight);
+}
+
+Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObject* py_node_sizes, PyObject* py_layer_vec, int check_positive_weight)
+{
   #ifdef DEBUG
     cerr << "create_graph_from_py" << endl;
   #endif
@@ -50,6 +55,7 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
 
   vector<size_t> node_sizes;
   vector<double> weights;
+  vector<size_t> layer_vec;
   if (py_node_sizes != NULL && py_node_sizes != Py_None)
   {
     #ifdef DEBUG
@@ -118,9 +124,41 @@ Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObje
     }
   }
 
+  if (py_layer_vec != NULL && py_layer_vec != Py_None)
+  {
+    #ifdef DEBUG
+      cerr << "Reading layer membership ." << endl;
+    #endif
+    size_t n = PyList_Size(py_layer_vec);
+    layer_vec.resize(n);
+    for (size_t v = 0; v < n; v++)
+    {
+      PyObject* py_item = PyList_GetItem(py_layer_vec, v);
+//      #ifdef IS_PY3K
+//      if (PyNumber_Check(py_item))
+//      #else
+//      if (PyInt_Check(py_item) || PyLong_Check(py_item))
+//      #endif
+      if (PyNumber_Check(py_item))
+      {
+        layer_vec[v] = PyNumber_AsSsize_t(py_item,PyExc_IndexError);
+      }
+      else
+      {
+        PyErr_SetString(PyExc_TypeError, "Expected integer value for membership vector.");
+        return NULL;
+      }
+    }
+  }
+
   // TODO: Pass correct_for_self_loops as parameter
   int correct_self_loops = false;
-  if (node_sizes.size() == n)
+
+  if (layer_vec.size() == n)
+  {
+    graph = new Graph(py_graph, weights, node_sizes, layer_vec, correct_self_loops);
+  }
+  else if (node_sizes.size() == n)
   {
     if (weights.size() == m)
       graph = new Graph(py_graph, weights, node_sizes, correct_self_loops);
@@ -601,17 +639,93 @@ extern "C"
     }
   }
 
+  PyObject* _new_RBConfigurationVertexPartitionWeightedLayers(PyObject *self, PyObject *args, PyObject *keywds)
+  {
+    PyObject* py_obj_graph = NULL;
+    PyObject* py_layer_vec = NULL;
+    PyObject* py_initial_membership = NULL;
+    PyObject* py_weights = NULL;
+
+    double resolution_parameter = 1.0;
+
+    static char* kwlist[] = {"graph", "layer_vec", "initial_membership", "weights", "resolution_parameter", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O|OOOd", kwlist,
+                                     &py_obj_graph, &py_layer_vec,
+                                     &py_initial_membership, &py_weights, &resolution_parameter))
+      return NULL;
+
+    try
+    {
+
+      Graph* graph = create_graph_from_py(py_obj_graph, py_weights, NULL, py_layer_vec, true);
+
+      RBConfigurationVertexPartitionWeightedLayers* partition = NULL;
+
+      // If necessary create an initial partition
+      if (py_initial_membership != NULL && py_initial_membership != Py_None)
+      {
+
+        vector<size_t> initial_membership;
+
+        #ifdef DEBUG
+          cerr << "Reading initial membership." << endl;
+        #endif
+        size_t n = PyList_Size(py_initial_membership);
+        initial_membership.resize(n);
+        for (size_t v = 0; v < n; v++)
+        {
+          PyObject* py_item = PyList_GetItem(py_initial_membership, v);
+          #ifdef IS_PY3K
+          if (PyLong_Check(py_item))
+          #else
+          if (PyInt_Check(py_item) || PyLong_Check(py_item))
+          #endif
+          {
+            initial_membership[v] = PyLong_AsLong(py_item);
+          }
+          else
+          {
+            PyErr_SetString(PyExc_TypeError, "Expected integer value for membership vector.");
+            return NULL;
+          }
+        }
+
+        partition = new RBConfigurationVertexPartitionWeightedLayers(graph, initial_membership, resolution_parameter);
+      }
+      else
+        partition = new RBConfigurationVertexPartitionWeightedLayers(graph, resolution_parameter);
+
+      // Do *NOT* forget to remove the graph upon deletion
+      partition->destructor_delete_graph = true;
+
+      PyObject* py_partition = capsule_MutableVertexPartition(partition);
+      #ifdef DEBUG
+        cerr << "Created capsule partition at address " << py_partition << endl;
+      #endif
+
+      return py_partition;
+    }
+    catch (std::exception const &e)
+    {
+      string s = "Could not construct partition: " + string(e.what());
+      PyErr_SetString(PyExc_BaseException, s.c_str());
+      return NULL;
+    }
+  }
+
   PyObject* _MutableVertexPartition_get_py_igraph(PyObject *self, PyObject *args, PyObject *keywds)
   {
     PyObject* py_partition = NULL;
+    PyObject* py_return_edge_layer_weights = Py_False;
 
-    static char* kwlist[] = {"partition", NULL};
+    static char* kwlist[] = {"partition","edgelayers", NULL};
 
     #ifdef DEBUG
       cerr << "Parsing arguments..." << endl;
     #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O|O", kwlist,
                                      &py_partition))
         return NULL;
 
@@ -657,6 +771,20 @@ extern "C"
         PyObject* item = PyInt_FromSize_t(graph->node_size(v));
       #endif
       PyList_SetItem(node_sizes, v, item);
+    }
+
+    if (PyObject_IsTrue(py_return_edge_layer_weights)){
+        vector <vector<double > > edge_layer_weights=graph->get_all_edge_layer_weights();
+        PyObject* clist;
+        PyObject* py_edge_layer_weights = PyList_New(edge_layer_weights.size());
+        for (size_t e = 0; e < edge_layer_weights.size(); e++ ){
+            clist=PyList_New(graph->lcount());
+            for (size_t l = 0; l < graph->lcount(); l++) {
+                PyList_SetItem(clist,l,PyFloat_FromDouble(edge_layer_weights[e][l]));
+            }
+            PyList_SetItem(py_edge_layer_weights,e,clist);
+        }
+        return Py_BuildValue("lOOOO", n, edges, weights, node_sizes,py_edge_layer_weights);
     }
 
     return Py_BuildValue("lOOO", n, edges, weights, node_sizes);

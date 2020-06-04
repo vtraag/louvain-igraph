@@ -772,6 +772,110 @@ class RBConfigurationVertexPartition(LinearResolutionParameterVertexPartition):
         initial_membership, weights, resolution_parameter)
     self._update_internal_membership()
 
+
+class RBConfigurationVertexPartitionWeightedLayers(LinearResolutionParameterVertexPartition):
+  """ Implements Reichardt and Bornholdt's Potts model with a configuration null model.
+
+  This quality function uses a linear resolution parameter.
+
+  Notes
+  -----
+  The quality function is
+
+  .. math:: Q = \\sum_{ij} \\left(A_{ij} - \\gamma \\frac{k_i k_j}{2m} \\right)\\delta(\\sigma_i, \\sigma_j)
+
+  where :math:`A` is the adjacency matrix, :math:`k_i` is the degree of node
+  :math:`i`, :math:`m` is the total number of edges, :math:`\\sigma_i` denotes
+  the community of node :math:`i`, :math:`\\delta(\\sigma_i, \\sigma_j) = 1` if
+  :math:`\\sigma_i = \\sigma_j` and `0` otherwise, and, finally :math:`\\gamma`
+  is a resolution parameter.
+
+  This can alternatively be formulated as a sum over communities:
+
+  .. math:: Q = \\sum_{c} \\left(m_c - \\gamma\\frac{K_c^2}{4m} \\right)
+
+  where :math:`m_c` is the number of internal edges of community :math:`c` and
+  :math:`K_c = \\sum_{i \\mid \\sigma_i = c} k_i` is the total degree of nodes
+  in community :math:`c`.
+
+  Note that this is the same as :class:`ModularityVertexPartition` for
+  :math:`\\gamma=1` and using the normalisation by :math:`2m`.
+
+  References
+  ----------
+  .. [1] Reichardt, J., & Bornholdt, S. (2006). Statistical mechanics of
+         community detection.  Physical Review E, 74(1), 016110.
+         `10.1103/PhysRevE.74.016110 <http://doi.org/10.1103/PhysRevE.74.016110>`_
+
+   """
+
+  def __init__(self, graph, layer_vec=None, initial_membership=None, weights=None, resolution_parameter=1.0):
+    """
+    Parameters
+    ----------
+    graph : :class:`ig.Graph`
+      Graph to define the partition on.
+
+    layer_vec: list/array of integers
+      layer membership each node in the superadjacency representation
+
+    layer_total_weights: list/array of float
+      for each layer, the sum of the total edge weight within that layer to replace
+      the total weights in the modularity calculation
+
+
+    initial_membership : list of int
+      Initial membership for the partition. If :obj:`None` then defaults to a
+      singleton partition.
+
+    weights : list of double, or edge attribute
+      Weights of edges. Can be either an iterable or an edge attribute.
+
+    resolution_parameter : double
+      Resolution parameter.
+    """
+    if initial_membership is not None:
+      initial_membership = list(initial_membership)
+
+
+    super(RBConfigurationVertexPartitionWeightedLayers, self).__init__(graph, initial_membership)
+
+    pygraph_t = _get_py_capsule(graph)
+
+    if weights is not None:
+      if isinstance(weights, str):
+        weights = graph.es[weights]
+      else:
+        # Make sure it is a list
+        weights = list(weights)
+
+
+    if layer_vec is not  None:
+      layer_vec=list(layer_vec)
+      # layer_vec=[int(val) for val in layer_vec]
+
+
+    else:
+      layer_vec = [0 for _ in range(graph.vcount())] #default is to assume single layer
+
+    self._partition = _c_louvain._new_RBConfigurationVertexPartitionWeightedLayers(pygraph_t, layer_vec,
+                                                                                   initial_membership, weights,
+                                                                                   resolution_parameter)
+    self._update_internal_membership()
+
+    @classmethod #we override this to correctly construct the class from aggregated version
+    def _FromCPartition(cls, partition):
+      n, edges, weights, node_sizes,edge_layer_weights = _c_louvain._MutableVertexPartition_get_py_igraph(partition,True)
+      graph = _ig.Graph(n=n,
+                        edges=edges,
+                        edge_attrs={'weight': weights,"layer_weights":edge_layer_weights},
+                        vertex_attrs={'node_size': node_sizes})
+
+      new_partition = cls(graph)
+      new_partition._partition = partition
+      new_partition._update_internal_membership()
+      return new_partition
+
 class CPMVertexPartition(LinearResolutionParameterVertexPartition):
   """ Implements CPM.
   This quality function uses a linear resolution parameter.

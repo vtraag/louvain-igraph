@@ -14,6 +14,7 @@
 #include "RBConfigurationVertexPartition.h"
 #include "RBERVertexPartition.h"
 #include "CPMVertexPartition.h"
+#include "RBConfigurationVertexPartitionWeightedLayers.h"
 #include "Optimiser.h"
 
 #include <sstream>
@@ -31,7 +32,10 @@ Graph* create_graph_from_py(PyObject* py_obj_graph);
 Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights);
 Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, int check_positive_weight);
 Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObject* py_node_sizes);
-Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObject* py_node_sizes, int check_positive_weight);
+Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObject* py_node_sizes,
+                            int check_positive_weight);
+Graph* create_graph_from_py(PyObject* py_obj_graph, PyObject* py_weights, PyObject* py_node_sizes,
+                            PyObject* py_layer_vec, int check_positive_weight);
 
 PyObject* capsule_MutableVertexPartition(MutableVertexPartition* partition);
 MutableVertexPartition* decapsule_MutableVertexPartition(PyObject* py_partition);
@@ -48,6 +52,7 @@ extern "C"
   PyObject* _new_CPMVertexPartition(PyObject *self, PyObject *args, PyObject *keywds);
   PyObject* _new_RBERVertexPartition(PyObject *self, PyObject *args, PyObject *keywds);
   PyObject* _new_RBConfigurationVertexPartition(PyObject *self, PyObject *args, PyObject *keywds);
+  PyObject* _new_RBConfigurationVertexPartitionWeightedLayers(PyObject *self, PyObject *args, PyObject *keywds);
 
   PyObject* _MutableVertexPartition_diff_move(PyObject *self, PyObject *args, PyObject *keywds);
   PyObject* _MutableVertexPartition_move_node(PyObject *self, PyObject *args, PyObject *keywds);

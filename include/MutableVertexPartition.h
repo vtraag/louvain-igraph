@@ -59,8 +59,8 @@ class MutableVertexPartition
     size_t csize(size_t comm);
     set<size_t> const& get_community(size_t comm);
     size_t nb_communities();
-
-    void move_node(size_t v,size_t new_comm);
+    inline size_t nb_empty_communities() {return this->_empty_communities.size();};
+    virtual void move_node(size_t v,size_t new_comm);
     virtual double diff_move(size_t v, size_t new_comm)
     {
       throw Exception("Function not implemented. This should be implented in a derived class, since the base class does not implement a specific method.");
@@ -85,14 +85,14 @@ class MutableVertexPartition
 
     void from_partition(MutableVertexPartition* partition);
 
-    inline double total_weight_in_comm(size_t comm) { return this->_total_weight_in_comm[comm]; };
-    inline double total_weight_from_comm(size_t comm) { return this->_total_weight_from_comm[comm]; };
-    inline double total_weight_to_comm(size_t comm) { return this->_total_weight_to_comm[comm]; };
-    inline double total_weight_in_all_comms() { return this->_total_weight_in_all_comms; };
+    virtual inline double total_weight_in_comm(size_t comm) { return this->_total_weight_in_comm[comm]; };
+    virtual inline double total_weight_from_comm(size_t comm) { return this->_total_weight_from_comm[comm]; };
+    virtual inline double total_weight_to_comm(size_t comm) { return this->_total_weight_to_comm[comm]; };
+    virtual inline double total_weight_in_all_comms() { return this->_total_weight_in_all_comms; };
     inline size_t total_possible_edges_in_all_comms() { return this->_total_possible_edges_in_all_comms; };
 
-    double weight_to_comm(size_t v, size_t comm);
-    double weight_from_comm(size_t v, size_t comm);
+    virtual double weight_to_comm(size_t v, size_t comm);
+    virtual double weight_from_comm(size_t v, size_t comm);
 
     vector<size_t> const& get_neigh_comms(size_t v, igraph_neimode_t);
     set<size_t>* get_neigh_comms(size_t v, igraph_neimode_t mode, vector<size_t> const& constrained_membership);
@@ -103,7 +103,7 @@ class MutableVertexPartition
 
   protected:
 
-    void init_admin();
+    virtual void init_admin();
 
     vector<size_t> _membership; // Membership vector, i.e. \sigma_i = c means that node i is in community c
 
@@ -113,6 +113,8 @@ class MutableVertexPartition
     vector< set<size_t>* > community;
     // Community size
     vector< size_t > _csize;
+    vector<size_t> _empty_communities;
+
 
     double weight_vertex_tofrom_comm(size_t v, size_t comm, igraph_neimode_t mode);
 
@@ -130,7 +132,6 @@ class MutableVertexPartition
     double _total_weight_in_all_comms;
     size_t _total_possible_edges_in_all_comms;
 
-    vector<size_t> _empty_communities;
 
     void cache_neigh_communities(size_t v, igraph_neimode_t mode);
 

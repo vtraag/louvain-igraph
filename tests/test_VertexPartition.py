@@ -61,7 +61,7 @@ graphs = [
 
 def make_weighted(G):
   m = G.ecount();
-  if PY3: 
+  if PY3:
     G.es['weight'] = [random.random() for i in range(G.ecount())];
   else:
     G.es['weight'] = [random.random() for i in xrange(G.ecount())];
@@ -82,10 +82,17 @@ class BaseTest:
       if 'weight' in graph.es.attributes() and self.partition_type == louvain.SignificanceVertexPartition:
         raise unittest.SkipTest('Significance doesn\'t handle weighted graphs');
 
-      if 'weight' in graph.es.attributes():
-        partition = self.partition_type(graph, weights='weight');
+      if self.partition_type == louvain.RBConfigurationVertexPartitionWeightedLayers:
+        layer_vec = [0 for _ in range(graph.vcount())]  # single layer base case
+        if 'weight' in graph.es.attributes():
+          partition = self.partition_type(graph, layer_vec=layer_vec, weights='weight');
+        else:
+          partition = self.partition_type(graph, layer_vec=layer_vec);
       else:
-        partition = self.partition_type(graph);
+        if 'weight' in graph.es.attributes():
+          partition = self.partition_type(graph, weights='weight');
+        else:
+          partition = self.partition_type(graph);
       for v in range(graph.vcount()):
         if graph.degree(v) >= 1:
           u = graph.neighbors(v)[0];
@@ -102,10 +109,20 @@ class BaseTest:
 
     @data(*graphs)
     def test_aggregate_partition(self, graph):
-      if 'weight' in graph.es.attributes() and self.partition_type != louvain.SignificanceVertexPartition:
-        partition = self.partition_type(graph, weights='weight');
+      if 'weight' in graph.es.attributes() and self.partition_type == louvain.SignificanceVertexPartition:
+        raise unittest.SkipTest('Significance doesn\'t handle weighted graphs');
+
+      if self.partition_type == louvain.RBConfigurationVertexPartitionWeightedLayers:
+        layer_vec = [0 for _ in range(graph.vcount())]  # single layer base case
+        if 'weight' in graph.es.attributes():
+          partition = self.partition_type(graph, layer_vec=layer_vec, weights='weight');
+        else:
+          partition = self.partition_type(graph, layer_vec=layer_vec);
       else:
-        partition = self.partition_type(graph);
+        if 'weight' in graph.es.attributes() and self.partition_type != louvain.SignificanceVertexPartition:
+          partition = self.partition_type(graph, weights='weight');
+        else:
+          partition = self.partition_type(graph);
       self.optimiser.move_nodes(partition);
       aggregate_partition = partition.aggregate_partition();
       self.assertAlmostEqual(
@@ -123,10 +140,20 @@ class BaseTest:
 
     @data(*graphs)
     def test_total_weight_in_all_comms(self, graph):
-      if 'weight' in graph.es.attributes() and self.partition_type != louvain.SignificanceVertexPartition:
-        partition = self.partition_type(graph, weights='weight');
+      if 'weight' in graph.es.attributes() and self.partition_type == louvain.SignificanceVertexPartition:
+        raise unittest.SkipTest('Significance doesn\'t handle weighted graphs');
+
+      if self.partition_type == louvain.RBConfigurationVertexPartitionWeightedLayers:
+        layer_vec = [0 for _ in range(graph.vcount())]  # single layer base case
+        if 'weight' in graph.es.attributes():
+          partition = self.partition_type(graph, layer_vec=layer_vec, weights='weight');
+        else:
+          partition = self.partition_type(graph, layer_vec=layer_vec);
       else:
-        partition = self.partition_type(graph);
+        if 'weight' in graph.es.attributes() and self.partition_type != louvain.SignificanceVertexPartition:
+          partition = self.partition_type(graph, weights='weight');
+        else:
+          partition = self.partition_type(graph);
       self.optimiser.optimise_partition(partition);
       s = sum([partition.total_weight_in_comm(c) for c,_ in enumerate(partition)]);
       self.assertAlmostEqual(
@@ -147,6 +174,11 @@ class BaseTest:
 #    super(RBERVertexPartitionTest, self).setUp();
 #    self.partition_type = louvain.RBERVertexPartition;
 #
+class RBConfigurationVertexPartitionTestWeightedLayers(BaseTest.MutableVertexPartitionTest):
+  def setUp(self):
+    super(RBConfigurationVertexPartitionTestWeightedLayers, self).setUp();
+    self.partition_type = louvain.RBConfigurationVertexPartitionWeightedLayers;
+
 #class RBConfigurationVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
 #  def setUp(self):
 #    super(RBConfigurationVertexPartitionTest, self).setUp();
@@ -157,15 +189,15 @@ class BaseTest:
 #    super(CPMVertexPartitionTest, self).setUp();
 #    self.partition_type = louvain.CPMVertexPartition;
 
-class SurpriseVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
-  def setUp(self):
-    super(SurpriseVertexPartitionTest, self).setUp();
-    self.partition_type = louvain.SurpriseVertexPartition;
+#class SurpriseVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
+#  def setUp(self):
+#    super(SurpriseVertexPartitionTest, self).setUp();
+#    self.partition_type = louvain.SurpriseVertexPartition;
 
-class SignificanceVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
-  def setUp(self):
-    super(SignificanceVertexPartitionTest, self).setUp();
-    self.partition_type = louvain.SignificanceVertexPartition;
+#class SignificanceVertexPartitionTest(BaseTest.MutableVertexPartitionTest):
+#  def setUp(self):
+#    super(SignificanceVertexPartitionTest, self).setUp();
+#    self.partition_type = louvain.SignificanceVertexPartition;
 
 #%%
 if __name__ == '__main__':
