@@ -752,7 +752,7 @@ extern "C"
     for (size_t e = 0; e < m; e++)
     {
       vector<size_t> edge = graph->edge(e);
-      PyList_SetItem(edges, e, Py_BuildValue("(KK)", edge[0], edge[1]));
+      PyList_SetItem(edges, e, Py_BuildValue("(nn)", edge[0], edge[1]));
     }
 
     PyObject* weights = PyList_New(m);
@@ -923,7 +923,7 @@ extern "C"
       cerr << "Parsing arguments..." << endl;
     #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKK", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "Onn", kwlist,
                                      &py_partition, &v, &new_comm))
         return NULL;
 
@@ -957,7 +957,7 @@ extern "C"
       cerr << "Parsing arguments..." << endl;
     #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKK", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "Onn", kwlist,
                                      &py_partition, &v, &new_comm))
         return NULL;
 
@@ -1063,7 +1063,7 @@ extern "C"
       cerr << "Parsing arguments..." << endl;
     #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OK", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "On", kwlist,
                                      &py_partition, &comm))
         return NULL;
 
@@ -1102,7 +1102,7 @@ extern "C"
       cerr << "Parsing arguments..." << endl;
     #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OK", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "On", kwlist,
                                      &py_partition, &comm))
         return NULL;
 
@@ -1141,7 +1141,7 @@ extern "C"
       cerr << "Parsing arguments..." << endl;
     #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OK", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "On", kwlist,
                                      &py_partition, &comm))
         return NULL;
 
@@ -1245,7 +1245,7 @@ extern "C"
       cerr << "Parsing arguments..." << endl;
     #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKK", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "Onn", kwlist,
                                      &py_partition, &v, &comm))
         return NULL;
 
@@ -1291,7 +1291,7 @@ extern "C"
       cerr << "Parsing arguments..." << endl;
     #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKK", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "Onn", kwlist,
                                      &py_partition, &v, &comm))
         return NULL;
 

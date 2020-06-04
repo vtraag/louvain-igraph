@@ -20,11 +20,7 @@ def _get_py_capsule(graph):
 from .VertexPartition import *
 from .Optimiser import *
 
-def set_rng_seed(seed):
-  """ Set seed for internal random number generator. """
-  _c_louvain._set_rng_seed(seed)
-
-def find_partition(graph, partition_type, initial_membership=None, weights=None, **kwargs):
+def find_partition(graph, partition_type, initial_membership=None, weights=None, seed=None, **kwargs):
   """ Detect communities using the default settings.
 
   This function detects communities given the specified method in the
@@ -49,6 +45,10 @@ def find_partition(graph, partition_type, initial_membership=None, weights=None,
 
   weights : list of double, or edge attribute
     Weights of edges. Can be either an iterable or an edge attribute.
+
+  seed : int
+    Seed for the random number generator. By default uses a random seed
+    if nothing is specified.
 
   **kwargs
     Remaining keyword arguments, passed on to constructor of
@@ -75,10 +75,14 @@ def find_partition(graph, partition_type, initial_membership=None, weights=None,
                              initial_membership=initial_membership,
                              **kwargs)
   optimiser = Optimiser()
+
+  if (not seed is None):
+    optimiser.set_rng_seed(seed)
+
   optimiser.optimise_partition(partition)
   return partition
 
-def find_partition_multiplex(graphs, partition_type, **kwargs):
+def find_partition_multiplex(graphs, partition_type, seed=None, **kwargs):
   """ Detect communities for multiplex graphs.
 
   Each graph should be defined on the same set of vertices, only the edges may
@@ -93,6 +97,10 @@ def find_partition_multiplex(graphs, partition_type, **kwargs):
 
   partition_type : type of :class:`MutableVertexPartition`
     The type of partition to use for optimisation (identical for all graphs).
+
+  seed : int
+    Seed for the random number generator. By default uses a random seed
+    if nothing is specified.
 
   **kwargs
     Remaining keyword arguments, passed on to constructor of ``partition_type``.
@@ -132,6 +140,10 @@ def find_partition_multiplex(graphs, partition_type, **kwargs):
   for graph in graphs:
     partitions.append(partition_type(graph, **kwargs))
   optimiser = Optimiser()
+
+  if (not seed is None):
+    optimiser.set_rng_seed(seed)
+
   improvement = optimiser.optimise_partition_multiplex(partitions, layer_weights)
   return partitions[0].membership, improvement
 
@@ -139,6 +151,7 @@ def find_partition_temporal(graphs, partition_type,
                             interslice_weight=1,
                             slice_attr='slice', vertex_id_attr='id',
                             edge_type_attr='type', weight_attr='weight',
+                            seed=None,
                             **kwargs):
   """ Detect communities for temporal graphs.
 
@@ -176,6 +189,10 @@ def find_partition_temporal(graphs, partition_type,
 
   weight_attr : string
     The edge attribute used to indicate the weight.
+
+  seed : int
+    Seed for the random number generator. By default uses a random seed
+    if nothing is specified.
 
   **kwargs
     Remaining keyword arguments, passed on to constructor of
@@ -234,6 +251,10 @@ def find_partition_temporal(graphs, partition_type,
   partition_interslice = CPMVertexPartition(G_interslice, resolution_parameter=0,
                                             node_sizes='node_size', weights=weight_attr)
   optimiser = Optimiser()
+
+  if (not seed is None):
+    optimiser.set_rng_seed(seed)
+
   improvement = optimiser.optimise_partition_multiplex(partitions + [partition_interslice])
   # Transform results back into original form.
   membership = {(v[slice_attr], v[vertex_id_attr]): m for v, m in zip(G.vs, partitions[0].membership)}
@@ -328,6 +349,10 @@ def slices_to_layers(G_coupling,
 
   slice_attr : string
     The vertex attribute which contains the slices.
+
+  vertex_id_attr : string
+    The vertex attribute which is used to identify whether two nodes in two
+    slices represent the same node, and hence, should be coupled.
 
   edge_type_attr : string
     The edge attribute to use for indicating the type of link (``interslice``

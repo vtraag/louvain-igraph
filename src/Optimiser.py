@@ -77,6 +77,13 @@ class Optimiser(object):
   ##########################################################
   # Set rng seed
   def set_rng_seed(self, value):
+    """ Set the random seed for the random number generator.
+
+    Parameters
+    ----------
+    value
+      The integer seed used in the random number generator
+    """
     _c_louvain._Optimiser_set_rng_seed(self._optimiser, value)
 
   def optimise_partition(self, partition):

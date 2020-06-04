@@ -42,7 +42,6 @@ from .functions import find_partition_multiplex
 from .functions import find_partition_temporal
 from .functions import slices_to_layers
 from .functions import time_slices_to_layers
-from .functions import set_rng_seed
 
 from .Optimiser import Optimiser
 from .VertexPartition import ModularityVertexPartition
@@ -54,21 +53,15 @@ from .VertexPartition import CPMVertexPartition
 from .VertexPartition import RBConfigurationVertexPartitionWeightedLayers
 
 from pkg_resources import get_distribution, DistributionNotFound
-import os.path
 
 try:
-    _dist = get_distribution('louvain')
-    # Normalize case for Windows systems
-    dist_loc = os.path.normcase(_dist.location)
-    here = os.path.normcase(__file__)
-    if not here.startswith(os.path.join(dist_loc, 'louvain')):
-        # not installed, but there is another version that *is*
-        raise DistributionNotFound
+    __version__ = get_distribution(__name__).version
 except DistributionNotFound:
-    __version__ = 'Please install this project with setup.py'
-else:
-    __version__ = _dist.version
+     # package is not installed
+    pass
 
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
+import warnings
+warnings.warn('This package has been superseded by the `leidenalg` package '
+              'and will no longer be maintained. Please upgrade to the `leidenalg` package.',
+              DeprecationWarning,
+              stacklevel=2)
