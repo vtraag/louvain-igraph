@@ -1,20 +1,16 @@
-#usr/bin/env python
+#!/usr/bin/env python
 
 import os
 import platform
-import sys
 
 ###########################################################################
 
-# Check Python's version info and exit early if it is too old
-if sys.version_info < (2, 7):
-    print("This module requires Python >= 2.7")
-    sys.exit(0)
-
 # Check whether we are compiling for PyPy. Headers will not be installed
 # for PyPy.
+from time import sleep
+
 SKIP_HEADER_INSTALL = (platform.python_implementation() == "PyPy") or (
-    "SKIP_HEADER_INSTALL" in os.environ
+        "SKIP_HEADER_INSTALL" in os.environ
 )
 
 ###########################################################################
@@ -131,13 +127,13 @@ def is_unix_like(platform=None):
     platform = platform or sys.platform
     platform = platform.lower()
     return (
-        platform.startswith("linux")
-        or platform.startswith("darwin")
-        or platform.startswith("cygwin")
+            platform.startswith("linux")
+            or platform.startswith("darwin")
+            or platform.startswith("cygwin")
     )
 
 
-def find_msvc_source_folder(folder = ".", requires_built=False):
+def find_msvc_source_folder(folder=".", requires_built=False):
     """Finds the folder that contains the MSVC-specific source of igraph if there
     is any. Returns `None` if no such folder is found. Prints a warning if the
     choice is ambiguous.
@@ -357,7 +353,7 @@ class IgraphCCoreBuilder(object):
             os.chdir(cwd)
 
     def copy_build_artifacts(
-        self, source_folder, build_folder, install_folder, libraries
+            self, source_folder, build_folder, install_folder, libraries
     ):
         building_on_windows = platform.system() == "Windows"
 
@@ -380,7 +376,7 @@ class IgraphCCoreBuilder(object):
             if msvc_builddir is not None:
                 print("Using MSVC build dir: %s\n\n" % msvc_builddir)
                 for fname in glob.glob(
-                    os.path.join(msvc_builddir, "Release", "*.lib")
+                        os.path.join(msvc_builddir, "Release", "*.lib")
                 ):
                     shutil.copy(fname, os.path.join(install_folder, "lib"))
             else:
@@ -388,7 +384,7 @@ class IgraphCCoreBuilder(object):
                 return False
         else:
             for fname in glob.glob(
-                os.path.join(build_folder, "src", ".libs", "libigraph.*")
+                    os.path.join(build_folder, "src", ".libs", "libigraph.*")
             ):
                 shutil.copy(fname, os.path.join(install_folder, "lib"))
 
@@ -495,8 +491,7 @@ class BuildConfiguration(object):
                     self.run_command("build_c_core")
                     if not buildcfg.c_core_built:
                         # Fall back to an educated guess if everything else failed
-                        if not detected:
-                            buildcfg.use_educated_guess()
+                        buildcfg.use_educated_guess()
 
                 # Add any extra library paths if needed; this is needed for the
                 # Appveyor CI build
@@ -593,10 +588,10 @@ class BuildConfiguration(object):
         igraph_builder = IgraphCCoreBuilder()
         libraries = igraph_builder.compile_in(build_folder, source_folder=source_folder)
         if not libraries or not igraph_builder.copy_build_artifacts(
-            source_folder=source_folder,
-            build_folder=build_folder,
-            install_folder=install_folder,
-            libraries=libraries,
+                source_folder=source_folder,
+                build_folder=build_folder,
+                install_folder=install_folder,
+                libraries=libraries,
         ):
             print("Could not compile the C core of igraph.")
             print("")
@@ -684,7 +679,7 @@ class BuildConfiguration(object):
                 self.use_pkgconfig = True
 
         for idx in reversed(opts_to_remove):
-            sys.argv[idx : (idx + 1)] = []
+            sys.argv[idx: (idx + 1)] = []
 
     def replace_static_libraries(self, only=None, exclusions=None):
         """Replaces references to libraries with full paths to their static
@@ -763,68 +758,65 @@ buildcfg.process_args_from_command_line()
 
 # Define the extension
 louvain_ext = Extension('louvain._c_louvain',
-                    sources = glob.glob(os.path.join('src', '*.cpp')),
-                    include_dirs=['include']);
+                        sources=glob.glob(os.path.join('src', '*.cpp')),
+                        include_dirs=['include'])
 
-options =  dict(
-  name = 'louvain',
-  description = 'louvain is a general algorithm for methods of community detection in large networks.',
-  long_description=
-    """
- louvain is a general algorithm for methods of community detection in large networks.
+options = dict(
+    name='louvain',
+    description='louvain is a general algorithm for methods of community detection in large networks.',
+    long_description="""\
+louvain is a general algorithm for methods of community detection in large networks.
 
- Please refer to the `documentation <http://louvain.readthedocs.io/en/latest>`_
- for more details.
+Please refer to the `documentation <http://louvain.readthedocs.io/en/latest>`_
+for more details.
 
- The source code of this package is hosted at `GitHub <https://github.com/vtraag/louvain>`_.
- Issues and bug reports are welcome at https://github.com/vtraag/louvain/issues.
-    """,
-  license = 'GPLv3+',
-  url = 'https://github.com/vtraag/louvain',
+The source code of this package is hosted at `GitHub <https://github.com/vtraag/louvain>`_.
+Issues and bug reports are welcome at https://github.com/vtraag/louvain/issues.
+""",
+    license='GPLv3+',
+    url='https://github.com/vtraag/louvain',
 
-  use_scm_version=True,
-  setup_requires=['setuptools_scm'],
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
 
-  author = 'V.A. Traag',
-  author_email = 'vincent@traag.net',
-  test_suite = 'tests',
+    author='V.A. Traag',
+    author_email='vincent@traag.net',
+    test_suite='tests',
 
-  provides = ['louvain'],
-  package_dir = {'louvain': 'src'},
-  packages = ['louvain'],
-  ext_modules = [louvain_ext],
-  install_requires = ['python-igraph >= 0.8.0'],
-  platforms="ALL",
-  keywords=[
-    'graph',
-    'network',
-    'community detection',
-    'clustering'
-    ],    
-  classifiers=[
-      'Development Status :: 4 - Beta',
-      'Environment :: Console',
-      'Intended Audience :: End Users/Desktop',
-      'Intended Audience :: Developers',
-      'Intended Audience :: Science/Research',
-      'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
-      'Operating System :: MacOS :: MacOS X',
-      'Operating System :: Microsoft :: Windows',
-      'Operating System :: POSIX',
-      'Programming Language :: Python',
-      'Programming Language :: C++',
-      'Topic :: Scientific/Engineering :: Mathematics',
-      'Topic :: Scientific/Engineering :: Information Analysis',
-      'Topic :: Sociology'
+    provides=['louvain'],
+    package_dir={'louvain': 'src'},
+    packages=['louvain'],
+    ext_modules=[louvain_ext],
+    python_requires='>=3.5',
+    install_requires=['python-igraph >= 0.8.0'],
+    platforms="ALL",
+    keywords=[
+        'graph',
+        'network',
+        'community detection',
+        'clustering'
+    ],
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: End Users/Desktop',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX',
+        'Programming Language :: Python',
+        'Programming Language :: C++',
+        'Topic :: Scientific/Engineering :: Mathematics',
+        'Topic :: Scientific/Engineering :: Information Analysis',
+        'Topic :: Sociology'
     ],
     cmdclass={
         "build_c_core": buildcfg.build_c_core,  # used by CI
         "build_ext": buildcfg.build_ext,
         "sdist": buildcfg.sdist
-    },  
+    },
 )
-
-if sys.version_info > (3, 0):
-    options["use_2to3"] = True
 
 setup(**options)
