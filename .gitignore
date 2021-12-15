@@ -41,3 +41,5 @@ PACKAGE.txt
 louvain-igraph.cscope_file_list
 .eggs/
 vendor/install/igraph
+src/louvain/version.py
+pip-wheel-metadata

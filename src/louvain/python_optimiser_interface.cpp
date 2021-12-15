@@ -268,11 +268,7 @@ extern "C"
       cerr << "Using optimiser at address " << optimiser << endl;
     #endif
 
-    #ifdef IS_PY3K
     return PyLong_FromLong(optimiser->consider_comms);
-    #else
-    return PyInt_FromLong(optimiser->consider_comms);
-    #endif
   }
 
   PyObject* _Optimiser_set_consider_empty_community(PyObject *self, PyObject *args, PyObject *keywds)
