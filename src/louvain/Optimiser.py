@@ -402,7 +402,7 @@ class Optimiser(object):
         stack_res_range.append((new_res, current_range[1]))
         # If we haven't scanned this resolution value yet,
         # do so now
-        if not bisect_values.has_key(new_res):
+        if not new_res in bisect_values:
           partition = find_partition(self, graph, partition_type=partition_type,
               weights=weights, resolution_parameter=new_res, **kwargs)
           bisect_values[new_res] = BisectPartition(partition=partition,
