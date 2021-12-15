@@ -3,10 +3,8 @@ import igraph as ig
 import louvain
 
 import sys
-PY3 = (sys.version > '3');
 
-if PY3:
-  from functools import reduce
+from functools import reduce
 
 class OptimiserTest(unittest.TestCase):
 
