@@ -771,6 +771,7 @@ options =  dict(
         'write_to': 'src/louvain/version.py',
   },
   setup_requires=['setuptools_scm'],
+  python_requires='>=3.1',
 
   author = 'V.A. Traag',
   author_email = 'vincent@traag.net',
