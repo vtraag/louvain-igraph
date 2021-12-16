@@ -1,3 +1,9 @@
+0.7.1
+- Updated build system to support setuptools>=58
+
+0.7.0
+- Corrected set_rng_seed
+
 0.6.1
 - Minor corrections to documentation
 - Added doctest to examples in documentation
