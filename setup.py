@@ -781,7 +781,7 @@ options =  dict(
   package_dir = {'louvain': os.path.join('src', 'louvain')},
   packages = ['louvain'],
   ext_modules = [louvain_ext],
-  install_requires = ['igraph >= 0.9.5'],
+  install_requires = ['igraph>=0.9.5,<0.10'],
   platforms="ALL",
   keywords=[
     'graph',
