@@ -1,3 +1,6 @@
+0.7.2
+- Constrained to igraph<=0.10.
+
 0.7.1
 - Updated build system to support setuptools>=58
 
