@@ -1,3 +1,8 @@
+0.8.1
+- Updated igraph C core to 0.10.6
+- Corrected aarch64 binary wheels
+- Corrected building from source
+
 0.8.0
 - Updated igraph C core to 0.10.2
 
