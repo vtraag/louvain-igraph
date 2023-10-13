@@ -877,7 +877,7 @@ options =  dict(
 
   provides = ['louvain'],
   python_requires=">=3.7",
-  install_requires = ['igraph >= 0.10.0,< 0.11'],
+  install_requires = ['igraph >= 0.10.0,< 0.12'],
   platforms="ALL",
   keywords=[
     'graph',
